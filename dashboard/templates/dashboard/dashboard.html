@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema Contable{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+        margin-bottom: 15px;
+    }
+    
+    .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-icon.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .stat-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .stat-icon.purple { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .chart-container {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    
+    .chart-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .chart-header h3 {
+        font-size: 18px;
+        color: #2c3e50;
+    }
+    
+    .recent-table {
+        width: 100%;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .recent-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .recent-table th {
+        background: #f8f9fa;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .recent-table td {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .recent-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Estadísticas -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-building"></i>
+        </div>
+        <div class="stat-value">{{ total_empresas }}</div>
+        <div class="stat-label">Empresas Activas</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-list"></i>
+        </div>
+        <div class="stat-value">{{ total_cuentas }}</div>
+        <div class="stat-label">Cuentas Contables</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="stat-value">{{ total_comprobantes }}</div>
+        <div class="stat-label">Comprobantes Aprobados</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon purple">
+            <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-value">${{ total_debitos|floatformat:2 }}</div>
+        <div class="stat-label">Total Débitos</div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="grid-2">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3><i class="fas fa-chart-pie"></i> Comprobantes por Tipo</h3>
+        </div>
+        <canvas id="chartComprobantes"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3><i class="fas fa-chart-bar"></i> Balance Débito/Crédito</h3>
+        </div>
+        <canvas id="chartBalance"></canvas>
+    </div>
+</div>
+
+<!-- Tablas Recientes -->
+<div class="chart-container">
+    <div class="chart-header">
+        <h3><i class="fas fa-clock"></i> Comprobantes Recientes</h3>
+    </div>
+    <div class="recent-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Tipo</th>
+                    <th>Empresa</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comprobante in comprobantes_recientes %}
+                <tr>
+                    <td><strong>{{ comprobante.numero }}</strong></td>
+                    <td>{{ comprobante.get_tipo_display }}</td>
+                    <td>{{ comprobante.empresa.nombre }}</td>
+                    <td>{{ comprobante.fecha|date:"d/m/Y" }}</td>
+                    <td>${{ comprobante.total_debito|floatformat:2 }}</td>
+                    <td>
+                        <span class="badge badge-{% if comprobante.estado == 'APROBADO' %}success{% elif comprobante.estado == 'BORRADOR' %}warning{% else %}danger{% endif %}">
+                            {{ comprobante.estado }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #7f8c8d;">No hay comprobantes registrados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="chart-container">
+    <div class="chart-header">
+        <h3><i class="fas fa-building"></i> Empresas Recientes</h3>
+    </div>
+    <div class="recent-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>NIT</th>
+                    <th>Representante Legal</th>
+                    <th>Fecha Registro</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for empresa in empresas_recientes %}
+                <tr>
+                    <td><strong>{{ empresa.nombre }}</strong></td>
+                    <td>{{ empresa.nit }}</td>
+                    <td>{{ empresa.representante_legal }}</td>
+                    <td>{{ empresa.fecha_creacion|date:"d/m/Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #7f8c8d;">No hay empresas registradas</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de Comprobantes por Tipo
+    const ctxComprobantes = document.getElementById('chartComprobantes').getContext('2d');
+    new Chart(ctxComprobantes, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                {% for item in comprobantes_por_tipo %}
+                    '{{ item.tipo }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for item in comprobantes_por_tipo %}
+                        {{ item.total }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#667eea',
+                    '#764ba2',
+                    '#f093fb',
+                    '#f5576c',
+                    '#4facfe',
+                ],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Balance
+    const ctxBalance = document.getElementById('chartBalance').getContext('2d');
+    new Chart(ctxBalance, {
+        type: 'bar',
+        data: {
+            labels: ['Débitos', 'Créditos'],
+            datasets: [{
+                label: 'Monto',
+                data: [{{ total_debitos }}, {{ total_creditos }}],
+                backgroundColor: [
+                    'rgba(102, 126, 234, 0.8)',
+                    'rgba(17, 153, 142, 0.8)',
+                ],
+                borderColor: [
+                    'rgba(102, 126, 234, 1)',
+                    'rgba(17, 153, 142, 1)',
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

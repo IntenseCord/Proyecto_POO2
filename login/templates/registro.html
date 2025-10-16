@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema Contable</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .register-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .register-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .register-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .register-body {
+            padding: 40px 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+        
+        .toggle-password:hover {
+            color: #667eea;
+        }
+        
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+        
+        .btn-register {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-register:active {
+            transform: translateY(0);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        
+        .login-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert-error {
+            background-color: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        
+        .alert-success {
+            background-color: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        
+        .password-hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .password-strength {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .strength-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+        
+        .strength-text {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .strength-weak { 
+            background: #e74c3c !important; 
+            width: 100%;
+        }
+        .strength-medium { 
+            background: #f39c12 !important; 
+            width: 100%;
+        }
+        .strength-good { 
+            background: #3498db !important; 
+            width: 100%;
+        }
+        .strength-strong { 
+            background: #27ae60 !important; 
+            width: 100%;
+        }
+        .strength-very-strong { 
+            background: #ffd700 !important; 
+            width: 100%;
+        }
+        .requirements {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            color: #7f8c8d;
+        }
+        
+        .requirement.met {
+            color: #27ae60;
+        }
+        
+        .requirement-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #bdc3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .requirement.met .requirement-icon {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+        
+        .requirement-icon::after {
+            content: '';
+            display: none;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+        
+        .requirement.met .requirement-icon::after {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>Crear Cuenta</h1>
+            <p>Regístrate para acceder al sistema contable</p>
+        </div>
+        <div class="register-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" action="{% url 'login:registro' %}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="first_name">Nombre *</label>
+                    <input type="text" id="first_name" name="first_name" required autofocus placeholder="Ej: Juan">
+                </div>
+                
+                <div class="form-group">
+                    <label for="last_name">Apellido *</label>
+                    <input type="text" id="last_name" name="last_name" required placeholder="Ej: Pérez">
+                </div>
+                
+                <div class="form-group">
+                    <label for="username">Usuario *</label>
+                    <input type="text" id="username" name="username" required placeholder="Ej: juanperez">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="ejemplo@correo.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="telefono">Celular *</label>
+                    <input type="tel" id="telefono" name="telefono" required placeholder="Ej: 3001234567">
+                </div>
+                
+                <div class="form-group">
+                    <label for="direccion">Dirección *</label>
+                    <input type="text" id="direccion" name="direccion" required placeholder="Ej: Calle 123 #45-67">
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha_nacimiento">Año de Nacimiento *</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password1">Contraseña *</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password1" name="password1" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('password1', 'eye-icon-1')">
+                            <svg id="eye-icon-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Indicador de fortaleza -->
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <div class="strength-text" id="strengthText"></div>
+                    </div>
+                    
+                    <!-- Requisitos -->
+                    <div class="requirements">
+                        <div class="requirement" id="req-length">
+                            <div class="requirement-icon"></div>
+                            <span>Mínimo 6 caracteres</span>
+                        </div>
+                        <div class="requirement" id="req-number">
+                            <div class="requirement-icon"></div>
+                            <span>Al menos un número (recomendado)</span>
+                        </div>
+                        <div class="requirement" id="req-special">
+                            <div class="requirement-icon"></div>
+                            <span>Carácter especial (recomendado)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password2">Confirmar Contraseña *</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password2" name="password2" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('password2', 'eye-icon-2')">
+                            <svg id="eye-icon-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-register">Crear Cuenta</button>
+            </form>
+            
+            <div class="login-link">
+                ¿Ya tienes cuenta? <a href="{% url 'login:login' %}">Inicia sesión aquí</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        // Función para mostrar/ocultar contraseña
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                `;
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                `;
+            }
+        }
+        
+        const password1 = document.getElementById('password1');
+        const strengthIndicator = document.getElementById('passwordStrength');
+        const strengthFill = document.getElementById('strengthFill');
+        const strengthText = document.getElementById('strengthText');
+        const reqLength = document.getElementById('req-length');
+        const reqNumber = document.getElementById('req-number');
+        const reqSpecial = document.getElementById('req-special');
+        
+        password1.addEventListener('input', function() {
+            const value = this.value;
+            
+            if (value.length === 0) {
+                strengthIndicator.style.display = 'none';
+                return;
+            }
+            
+            strengthIndicator.style.display = 'block';
+            
+            // Verificar requisitos
+            const hasLength = value.length >= 6;
+            const hasNumber = /\d/.test(value);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+            
+            // Actualizar iconos de requisitos
+            updateRequirement(reqLength, hasLength);
+            updateRequirement(reqNumber, hasNumber);
+            updateRequirement(reqSpecial, hasSpecial);
+            
+            // Calcular fortaleza
+            let strength = 0;
+            if (hasLength) strength += 25;
+            if (value.length >= 8) strength += 15;
+            if (value.length >= 12) strength += 10;
+            if (hasNumber) strength += 25;
+            if (hasSpecial) strength += 25;
+            
+            // Actualizar barra y texto
+            strengthFill.style.width = strength + '%';
+            
+            if (strength < 40) {
+                strengthFill.className = 'strength-fill strength-weak';
+                strengthText.textContent = 'Débil';
+                strengthText.style.color = '#e74c3c';
+            } else if (strength < 60) {
+                strengthFill.className = 'strength-fill strength-medium';
+                strengthText.textContent = 'Media';
+                strengthText.style.color = '#f39c12';
+            } else if (strength < 80) {
+                strengthFill.className = 'strength-fill strength-good';
+                strengthText.textContent = 'Buena';
+                strengthText.style.color = '#3498db';
+            } else if (strength < 100) {
+                strengthFill.className = 'strength-fill strength-strong';
+                strengthText.textContent = 'Fuerte';
+                strengthText.style.color = '#27ae60';
+            } else {
+                strengthFill.className = 'strength-fill strength-very-strong';
+                strengthText.textContent = 'Muy fuerte';
+                strengthText.style.color = '#ffd700';
+            }
+        });
+        
+        function updateRequirement(element, isMet) {
+            if (isMet) {
+                element.classList.add('met');
+            } else {
+                element.classList.remove('met');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Contraseña - Sistema Contable</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .reset-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .reset-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .reset-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .reset-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .reset-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .reset-body {
+            padding: 40px 30px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-error {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+        
+        .alert-success {
+            background: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-wrapper input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .password-wrapper input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+        
+        .toggle-password:hover {
+            color: #667eea;
+        }
+        
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .password-strength {
+            margin-top: 10px;
+        }
+        
+        .strength-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+        }
+        
+        .strength-text {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .requirements {
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #666;
+        }
+        
+        .requirement.met {
+            color: #27ae60;
+        }
+        
+        .requirement-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #bdc3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .requirement.met .requirement-icon {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+        
+        .requirement-icon::after {
+            content: '';
+            display: none;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+        
+        .requirement.met .requirement-icon::after {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="reset-container">
+        <div class="reset-header">
+            <div class="reset-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h1>Nueva Contraseña</h1>
+            <p>Crea una contraseña segura para tu cuenta</p>
+        </div>
+        
+        <div class="reset-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="password1">
+                        <i class="fas fa-lock"></i> Nueva Contraseña
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password1" name="password1" required autofocus>
+                        <button type="button" class="toggle-password" onclick="togglePassword('password1', 'eye-icon-1')">
+                            <svg id="eye-icon-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <div class="strength-text" id="strengthText"></div>
+                    </div>
+                    
+                    <div class="requirements">
+                        <div class="requirement" id="req-length">
+                            <div class="requirement-icon"></div>
+                            <span>Mínimo 6 caracteres</span>
+                        </div>
+                        <div class="requirement" id="req-number">
+                            <div class="requirement-icon"></div>
+                            <span>Al menos un número (recomendado)</span>
+                        </div>
+                        <div class="requirement" id="req-special">
+                            <div class="requirement-icon"></div>
+                            <span>Carácter especial (recomendado)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password2">
+                        <i class="fas fa-lock"></i> Confirmar Contraseña
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password2" name="password2" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('password2', 'eye-icon-2')">
+                            <svg id="eye-icon-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-check"></i> Restablecer Contraseña
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+            }
+        }
+        
+        const password1 = document.getElementById('password1');
+        const strengthFill = document.getElementById('strengthFill');
+        const strengthText = document.getElementById('strengthText');
+        
+        password1.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            
+            // Check length
+            if (password.length >= 6) {
+                strength += 25;
+                document.getElementById('req-length').classList.add('met');
+            } else {
+                document.getElementById('req-length').classList.remove('met');
+            }
+            
+            // Check for numbers
+            if (/\d/.test(password)) {
+                strength += 25;
+                document.getElementById('req-number').classList.add('met');
+            } else {
+                document.getElementById('req-number').classList.remove('met');
+            }
+            
+            // Check for special characters
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                strength += 25;
+                document.getElementById('req-special').classList.add('met');
+            } else {
+                document.getElementById('req-special').classList.remove('met');
+            }
+            
+            // Check for uppercase and lowercase
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {
+                strength += 25;
+            }
+            
+            // Update strength bar
+            strengthFill.style.width = strength + '%';
+            
+            if (strength <= 25) {
+                strengthFill.style.background = '#e74c3c';
+                strengthText.textContent = 'Débil';
+                strengthText.style.color = '#e74c3c';
+            } else if (strength <= 50) {
+                strengthFill.style.background = '#f39c12';
+                strengthText.textContent = 'Media';
+                strengthText.style.color = '#f39c12';
+            } else if (strength <= 75) {
+                strengthFill.style.background = '#3498db';
+                strengthText.textContent = 'Buena';
+                strengthText.style.color = '#3498db';
+            } else {
+                strengthFill.style.background = '#27ae60';
+                strengthText.textContent = 'Fuerte';
+                strengthText.style.color = '#27ae60';
+            }
+        });
+    </script>
+</body>
+</html>
