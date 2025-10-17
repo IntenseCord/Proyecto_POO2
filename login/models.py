@@ -10,10 +10,10 @@ class Perfil(models.Model):
     """Modelo para el perfil extendido del usuario"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
     foto = models.ImageField(upload_to='perfiles/', null=True, blank=True, default='perfiles/default.png')
-    telefono = models.CharField(max_length=20, blank=True, null=True)
-    direccion = models.CharField(max_length=255, blank=True, null=True)
+    telefono = models.CharField(max_length=20, blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
     fecha_nacimiento = models.DateField(null=True, blank=True)
-    bio = models.TextField(max_length=500, blank=True, null=True)
+    bio = models.TextField(max_length=500, blank=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
     
     class Meta:
