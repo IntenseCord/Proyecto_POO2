@@ -9,79 +9,49 @@ from django.urls import reverse
 from .models import VerificacionEmail, Perfil, RecuperacionContrasena, IntentoLogin
 from django.utils import timezone
 
+# Constantes para evitar duplicación de literales en redirecciones
+DASHBOARD_HOME = 'dashboard:home'
+LOGIN_TEMPLATE = 'login.html'
+
 def landing_view(request):
     """Vista para la página de bienvenida"""
     if request.user.is_authenticated:
-        return redirect('dashboard:home')
+        return redirect(DASHBOARD_HOME)
     return render(request, 'landing.html')
 
 def login_view(request):
     """Vista para el login de usuarios"""
     if request.user.is_authenticated:
-        return redirect('dashboard:home')
+        return redirect(DASHBOARD_HOME)
     
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        # Obtener IP del cliente
-        ip_address = get_client_ip(request)
-        
-        # Verificar si el usuario está bloqueado
-        try:
-            intento = IntentoLogin.objects.get(username=username, ip_address=ip_address)
-            
-            if intento.esta_bloqueado():
-                tiempo_restante = intento.bloqueado_hasta - timezone.now()
-                minutos = int(tiempo_restante.total_seconds() / 60)
-                messages.error(request, f'Cuenta bloqueada temporalmente. Intenta de nuevo en {minutos} minutos.')
-                return render(request, 'login.html', {'bloqueado': True, 'intentos': intento.intentos})
-        except IntentoLogin.DoesNotExist:
-            intento = None
-        
-        # Intentar autenticar
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            # Verificar si el usuario tiene email verificado (solo para usuarios normales)
-            if not user.is_superuser and hasattr(user, 'verificacion'):
-                if not user.verificacion.verificado:
-                    messages.error(request, 'Debes verificar tu email antes de iniciar sesión. Revisa tu correo.')
-                    return render(request, 'login.html')
-            
-            # Login exitoso - resetear intentos
-            if intento:
-                intento.resetear()
-            
-            login(request, user)
-            messages.success(request, f'¡Bienvenido {user.username}!')
-            return redirect('dashboard:home')
-        else:
-            # Login fallido - incrementar intentos
-            if intento:
-                intento.incrementar_intentos()
-            else:
-                intento = IntentoLogin.objects.create(
-                    username=username,
-                    ip_address=ip_address,
-                    intentos=1
-                )
-            
-            # Mostrar mensaje con intentos restantes
-            intentos_restantes = 5 - intento.intentos
-            if intentos_restantes > 0:
-                messages.error(request, f'Usuario o contraseña incorrectos. Te quedan {intentos_restantes} intentos.')
-            else:
-                messages.error(request, 'Cuenta bloqueada por 15 minutos debido a múltiples intentos fallidos.')
-            
-            return render(request, 'login.html', {'intentos': intento.intentos})
+    if request.method != 'POST':
+        return render(request, LOGIN_TEMPLATE)
+
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    ip_address = get_client_ip(request)
+
+    intento = _get_login_attempt(username, ip_address)
+    bloqueado_response = _response_if_blocked(intento, request)
+    if bloqueado_response:
+        return bloqueado_response
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return _handle_failed_login(intento, username, ip_address, request)
+
+    if _requires_email_verification(user):
+        messages.error(request, 'Debes verificar tu email antes de iniciar sesión. Revisa tu correo.')
+        return render(request, LOGIN_TEMPLATE)
+
+    return _handle_successful_login(request, user, intento)
     
-    return render(request, 'login.html')
+    
 
 def registro_view(request):
     """Vista para el registro de nuevos usuarios"""
     if request.user.is_authenticated:
-        return redirect('dashboard:home')
+        return redirect(DASHBOARD_HOME)
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -210,7 +180,7 @@ def verificar_email_view(request, token):
 def solicitar_recuperacion_view(request):
     """Vista para solicitar recuperación de contraseña"""
     if request.user.is_authenticated:
-        return redirect('dashboard:home')
+        return redirect(DASHBOARD_HOME)
     
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -365,3 +335,49 @@ def perfil_view(request):
         return redirect('login:perfil')
     
     return render(request, 'perfil.html', {'perfil': perfil})
+
+# ------------------------
+# Helpers de autenticación
+# ------------------------
+
+def _get_login_attempt(username, ip_address):
+    try:
+        return IntentoLogin.objects.get(username=username, ip_address=ip_address)
+    except IntentoLogin.DoesNotExist:
+        return None
+
+def _response_if_blocked(intento, request):
+    if intento and intento.esta_bloqueado():
+        tiempo_restante = intento.bloqueado_hasta - timezone.now()
+        minutos = int(tiempo_restante.total_seconds() / 60)
+        messages.error(request, f'Cuenta bloqueada temporalmente. Intenta de nuevo en {minutos} minutos.')
+        return render(request, LOGIN_TEMPLATE, {'bloqueado': True, 'intentos': intento.intentos})
+    return None
+
+def _requires_email_verification(user):
+    return (not user.is_superuser) and hasattr(user, 'verificacion') and (not user.verificacion.verificado)
+
+def _handle_failed_login(intento, username, ip_address, request):
+    if intento:
+        intento.incrementar_intentos()
+    else:
+        intento = IntentoLogin.objects.create(
+            username=username,
+            ip_address=ip_address,
+            intentos=1
+        )
+
+    intentos_restantes = 5 - intento.intentos
+    if intentos_restantes > 0:
+        messages.error(request, f'Usuario o contraseña incorrectos. Te quedan {intentos_restantes} intentos.')
+    else:
+        messages.error(request, 'Cuenta bloqueada por 15 minutos debido a múltiples intentos fallidos.')
+
+    return render(request, LOGIN_TEMPLATE, {'intentos': intento.intentos})
+
+def _handle_successful_login(request, user, intento):
+    if intento:
+        intento.resetear()
+    login(request, user)
+    messages.success(request, f'¡Bienvenido {user.username}!')
+    return redirect(DASHBOARD_HOME)

@@ -13,17 +13,17 @@ EMAIL_PROVIDERS = {
     
     # Outlook/Hotmail
     'outlook.com': {
-        'host': 'smtp-mail.outlook.com',
+        'host': 'smtp.office365.com',
         'port': 587,
         'use_tls': True,
     },
     'hotmail.com': {
-        'host': 'smtp-mail.outlook.com',
+        'host': 'smtp.office365.com',
         'port': 587,
         'use_tls': True,
     },
     'live.com': {
-        'host': 'smtp-mail.outlook.com',
+        'host': 'smtp.office365.com',
         'port': 587,
         'use_tls': True,
     },
