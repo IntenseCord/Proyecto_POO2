@@ -247,7 +247,7 @@ def restablecer_contrasena_view(request, token):
         
         return render(request, 'restablecer_contrasena.html', {'token': token})
         
-    except Exception as e:
+    except Exception as _:
         messages.error(request, 'Enlace inválido.')
         return redirect(LOGIN_ROUTE_NAME)
 
