@@ -290,5 +290,39 @@
             }
         }
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            if (!form) return;
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                try {
+                    const res = await fetch('/api/auth/login/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    if (!res.ok) {
+                        console.error('JWT login failed', res.status);
+                        alert('Credenciales inválidas o error del servidor');
+                        return;
+                    }
+                    const data = await res.json();
+                    sessionStorage.setItem('access', data.access);
+                    sessionStorage.setItem('refresh', data.refresh);
+                    sessionStorage.setItem('user', JSON.stringify(data.user));
+                    // Opcional: mostrar en consola
+                    console.log('JWT access:', data.access);
+                    const dest = (data.user && data.user.is_superuser) ? '/admin/' : '/dashboard/';
+                    window.location.href = dest;
+                } catch (err) {
+                    console.error('JWT login exception', err);
+                    alert('No fue posible iniciar sesión. Intenta de nuevo.');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

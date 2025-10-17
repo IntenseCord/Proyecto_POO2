@@ -380,6 +380,23 @@
             e.stopPropagation();
         });
     </script>
+    <script>
+        // Clear JWT tokens on logout click
+        (function(){
+            const logoutLink = document.querySelector('a.dropdown-item.logout[href*="logout"]');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(){
+                    try {
+                        sessionStorage.removeItem('access');
+                        sessionStorage.removeItem('refresh');
+                        sessionStorage.removeItem('user');
+                    } catch (e) {
+                        console.warn('Failed clearing sessionStorage tokens', e);
+                    }
+                });
+            }
+        })();
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>
