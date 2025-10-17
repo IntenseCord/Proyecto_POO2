@@ -95,7 +95,7 @@ def registro_view(request):
             user.save()
             
             # Crear o actualizar perfil con los datos adicionales
-            perfil, created = Perfil.objects.get_or_create(user=user)
+            perfil, _ = Perfil.objects.get_or_create(user=user)
             perfil.telefono = telefono
             perfil.direccion = direccion
             perfil.fecha_nacimiento = fecha_nacimiento
@@ -170,7 +170,7 @@ def verificar_email_view(request, token):
         messages.success(request, '¡Email verificado exitosamente! Ahora puedes iniciar sesión.')
         return redirect(LOGIN_ROUTE_NAME)
         
-    except Exception as e:
+    except Exception as _:
         messages.error(request, 'Token de verificación inválido.')
         return redirect(LOGIN_ROUTE_NAME)
 
@@ -305,7 +305,7 @@ def logout_view(request):
 def perfil_view(request):
     """Vista para ver y editar el perfil del usuario"""
     # Asegurar que el usuario tenga un perfil
-    perfil, created = Perfil.objects.get_or_create(user=request.user)
+    perfil, _ = Perfil.objects.get_or_create(user=request.user)
     
     if request.method == 'POST':
         # Actualizar datos del usuario
