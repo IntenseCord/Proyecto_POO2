@@ -12,6 +12,7 @@ from django.utils import timezone
 # Constantes para evitar duplicación de literales en redirecciones
 DASHBOARD_HOME = 'dashboard:home'
 LOGIN_TEMPLATE = 'login.html'
+LOGIN_ROUTE_NAME = 'login:login'
 
 def landing_view(request):
     """Vista para la página de bienvenida"""
@@ -66,25 +67,21 @@ def registro_view(request):
         direccion = request.POST.get('direccion', '')
         fecha_nacimiento = request.POST.get('fecha_nacimiento', '')
         
-        # Validaciones
-        if not username or not password1 or not password2:
-            messages.error(request, 'Usuario y contraseñas son obligatorios')
-        elif not first_name or not last_name:
-            messages.error(request, 'Nombre y apellido son obligatorios')
-        elif not telefono:
-            messages.error(request, 'El teléfono es obligatorio')
-        elif not direccion:
-            messages.error(request, 'La dirección es obligatoria')
-        elif not fecha_nacimiento:
-            messages.error(request, 'El año de nacimiento es obligatorio')
-        elif password1 != password2:
-            messages.error(request, 'Las contraseñas no coinciden')
-        elif len(password1) < 6:
-            messages.error(request, 'La contraseña debe tener al menos 6 caracteres')
-        elif User.objects.filter(username=username).exists():
-            messages.error(request, 'El nombre de usuario ya existe')
-        elif email and User.objects.filter(email=email).exists():
-            messages.error(request, 'El email ya está registrado')
+        # Validaciones extraídas a helper para reducir complejidad cognitiva
+        error_msg = _validate_registration(
+            username=username,
+            email=email,
+            password1=password1,
+            password2=password2,
+            first_name=first_name,
+            last_name=last_name,
+            telefono=telefono,
+            direccion=direccion,
+            fecha_nacimiento=fecha_nacimiento,
+        )
+
+        if error_msg:
+            messages.error(request, error_msg)
         else:
             # Crear usuario normal (NO superusuario)
             user = User.objects.create_user(
@@ -111,7 +108,7 @@ def registro_view(request):
             enviar_email_verificacion(user, verificacion.token, request)
             
             messages.success(request, '¡Cuenta creada! Te hemos enviado un email de verificación. Por favor revisa tu correo.')
-            return redirect('login:login')
+            return redirect(LOGIN_ROUTE_NAME)
     
     return render(request, 'registro.html')
 
@@ -159,11 +156,11 @@ def verificar_email_view(request, token):
         
         if verificacion.verificado:
             messages.info(request, 'Tu email ya ha sido verificado anteriormente.')
-            return redirect('login:login')
+            return redirect(LOGIN_ROUTE_NAME)
         
         if not verificacion.es_valido():
             messages.error(request, 'El enlace de verificación ha expirado. Por favor solicita uno nuevo.')
-            return redirect('login:login')
+            return redirect(LOGIN_ROUTE_NAME)
         
         # Marcar como verificado
         verificacion.verificado = True
@@ -171,11 +168,11 @@ def verificar_email_view(request, token):
         verificacion.save()
         
         messages.success(request, '¡Email verificado exitosamente! Ahora puedes iniciar sesión.')
-        return redirect('login:login')
+        return redirect(LOGIN_ROUTE_NAME)
         
     except Exception as e:
         messages.error(request, 'Token de verificación inválido.')
-        return redirect('login:login')
+        return redirect(LOGIN_ROUTE_NAME)
 
 def solicitar_recuperacion_view(request):
     """Vista para solicitar recuperación de contraseña"""
@@ -202,12 +199,12 @@ def solicitar_recuperacion_view(request):
             enviar_email_recuperacion(user, recuperacion.token, request)
             
             messages.success(request, 'Te hemos enviado un email con instrucciones para recuperar tu contraseña.')
-            return redirect('login:login')
+            return redirect(LOGIN_ROUTE_NAME)
             
         except User.DoesNotExist:
             # Por seguridad, no revelamos si el email existe o no
             messages.success(request, 'Si el email existe, recibirás instrucciones para recuperar tu contraseña.')
-            return redirect('login:login')
+            return redirect(LOGIN_ROUTE_NAME)
     
     return render(request, 'solicitar_recuperacion.html')
 
@@ -218,7 +215,7 @@ def restablecer_contrasena_view(request, token):
         
         if recuperacion.usado:
             messages.error(request, 'Este enlace ya ha sido utilizado.')
-            return redirect('login:login')
+            return redirect(LOGIN_ROUTE_NAME)
         
         if not recuperacion.es_valido():
             messages.error(request, 'Este enlace ha expirado. Por favor solicita uno nuevo.')
@@ -246,13 +243,13 @@ def restablecer_contrasena_view(request, token):
                 recuperacion.save()
                 
                 messages.success(request, '¡Contraseña restablecida exitosamente! Ahora puedes iniciar sesión.')
-                return redirect('login:login')
+                return redirect(LOGIN_ROUTE_NAME)
         
         return render(request, 'restablecer_contrasena.html', {'token': token})
         
     except Exception as e:
         messages.error(request, 'Enlace inválido.')
-        return redirect('login:login')
+        return redirect(LOGIN_ROUTE_NAME)
 
 def get_client_ip(request):
     """Obtiene la IP del cliente"""
@@ -381,3 +378,40 @@ def _handle_successful_login(request, user, intento):
     login(request, user)
     messages.success(request, f'¡Bienvenido {user.username}!')
     return redirect(DASHBOARD_HOME)
+
+# ------------------------
+# Validaciones de registro
+# ------------------------
+
+def _validate_registration(
+    *,
+    username,
+    email,
+    password1,
+    password2,
+    first_name,
+    last_name,
+    telefono,
+    direccion,
+    fecha_nacimiento,
+):
+    """Devuelve un mensaje de error si alguna validación falla; None si todo ok."""
+    if not username or not password1 or not password2:
+        return 'Usuario y contraseñas son obligatorios'
+    if not first_name or not last_name:
+        return 'Nombre y apellido son obligatorios'
+    if not telefono:
+        return 'El teléfono es obligatorio'
+    if not direccion:
+        return 'La dirección es obligatoria'
+    if not fecha_nacimiento:
+        return 'El año de nacimiento es obligatorio'
+    if password1 != password2:
+        return 'Las contraseñas no coinciden'
+    if len(password1) < 6:
+        return 'La contraseña debe tener al menos 6 caracteres'
+    if User.objects.filter(username=username).exists():
+        return 'El nombre de usuario ya existe'
+    if email and User.objects.filter(email=email).exists():
+        return 'El email ya está registrado'
+    return None
