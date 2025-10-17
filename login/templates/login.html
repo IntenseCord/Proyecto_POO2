@@ -316,7 +316,16 @@
                     // Opcional: mostrar en consola
                     console.log('JWT access:', data.access);
                     const dest = (data.user && data.user.is_superuser) ? '/admin/' : '/dashboard/';
-                    window.location.href = dest;
+                    // Crear/actualizar input hidden 'next' y enviar el formulario para establecer la sesión de Django
+                    let nextInput = form.querySelector('input[name="next"]');
+                    if (!nextInput) {
+                        nextInput = document.createElement('input');
+                        nextInput.type = 'hidden';
+                        nextInput.name = 'next';
+                        form.appendChild(nextInput);
+                    }
+                    nextInput.value = dest;
+                    form.submit();
                 } catch (err) {
                     console.error('JWT login exception', err);
                     alert('No fue posible iniciar sesión. Intenta de nuevo.');
