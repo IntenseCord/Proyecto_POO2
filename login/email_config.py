@@ -2,6 +2,9 @@
 Configuración de proveedores de email más utilizados
 """
 
+# Constantes reutilizables para evitar duplicación de literales
+OFFICE365_SMTP_HOST = 'smtp.office365.com'
+
 EMAIL_PROVIDERS = {
     # Gmail
     'gmail.com': {
@@ -13,17 +16,17 @@ EMAIL_PROVIDERS = {
     
     # Outlook/Hotmail
     'outlook.com': {
-        'host': 'smtp-mail.outlook.com',
+        'host': OFFICE365_SMTP_HOST,
         'port': 587,
         'use_tls': True,
     },
     'hotmail.com': {
-        'host': 'smtp-mail.outlook.com',
+        'host': OFFICE365_SMTP_HOST,
         'port': 587,
         'use_tls': True,
     },
     'live.com': {
-        'host': 'smtp-mail.outlook.com',
+        'host': OFFICE365_SMTP_HOST,
         'port': 587,
         'use_tls': True,
     },
