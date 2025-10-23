@@ -1,0 +1,226 @@
+{% extends 'inventario/base_inventario.html' %}
+
+{% block page_title %}Dashboard de Inventario{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <a href="{% url 'inventario:crear_producto' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nuevo Producto
+    </a>
+    <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-primary">
+        <i class="fas fa-list"></i> Ver Todos
+    </a>
+    <a href="{% url 'inventario:reporte_inventario' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-chart-bar"></i> Reporte
+    </a>
+</div>
+{% endblock %}
+
+{% block inventario_content %}
+<!-- Tarjetas de estadísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Productos</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_productos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-boxes stats-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Valor Total</div>
+                        <div class="h5 mb-0 font-weight-bold">${{ valor_total_inventario|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign stats-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Bajo Stock</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ productos_bajo_stock }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle stats-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Categorías</div>
+                        <div class="h5 mb-0 font-weight-bold">
+                            <a href="{% url 'inventario:lista_categorias' %}" class="text-decoration-none">Ver Todas</a>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tags stats-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Productos Recientes -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Productos Recientes</h6>
+                <a href="{% url 'inventario:lista_productos' %}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+            </div>
+            <div class="card-body">
+                {% if productos_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Stock</th>
+                                    <th>Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_recientes %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'inventario:detalle_producto' producto.id %}" class="text-decoration-none">
+                                            {{ producto.codigo }}
+                                        </a>
+                                    </td>
+                                    <td>{{ producto.nombre|truncatechars:30 }}</td>
+                                    <td>
+                                        <span class="badge {% if producto.necesita_restock %}badge-stock-bajo{% else %}badge-stock-normal{% endif %}">
+                                            {{ producto.cantidad }}
+                                        </span>
+                                    </td>
+                                    <td>${{ producto.precio_unitario }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay productos registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas de Stock -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-warning">Alertas de Stock Bajo</h6>
+                <span class="badge badge-warning">{{ productos_alerta|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if productos_alerta %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Stock Actual</th>
+                                    <th>Stock Mínimo</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_alerta %}
+                                <tr class="alert-stock">
+                                    <td>
+                                        <strong>{{ producto.nombre|truncatechars:25 }}</strong><br>
+                                        <small class="text-muted">{{ producto.codigo }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-danger">{{ producto.cantidad }}</span>
+                                    </td>
+                                    <td>{{ producto.stock_minimo }}</td>
+                                    <td>
+                                        <a href="{% url 'inventario:crear_movimiento' producto.id %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Agregar Stock">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <p class="text-muted">¡Excelente! Todos los productos tienen stock suficiente.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Acciones Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'inventario:crear_producto' %}" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-plus-circle fa-2x mb-2"></i><br>
+                            Nuevo Producto
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'inventario:crear_categoria' %}" class="btn btn-outline-success btn-lg w-100">
+                            <i class="fas fa-tags fa-2x mb-2"></i><br>
+                            Nueva Categoría
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-info btn-lg w-100">
+                            <i class="fas fa-search fa-2x mb-2"></i><br>
+                            Buscar Productos
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'inventario:reporte_inventario' %}" class="btn btn-outline-secondary btn-lg w-100">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                            Ver Reportes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

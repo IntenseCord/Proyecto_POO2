@@ -1,0 +1,307 @@
+{% extends 'inventario/base_inventario.html' %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Reporte de Inventario</li>
+{% endblock %}
+
+{% block page_title %}Reporte de Inventario{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="fas fa-print"></i> Imprimir
+    </button>
+    <button onclick="exportarExcel()" class="btn btn-success">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+    </button>
+    <a href="{% url 'inventario:dashboard' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+}
+</style>
+{% endblock %}
+
+{% block inventario_content %}
+<!-- Resumen Ejecutivo -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Productos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_productos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Valor Total Inventario
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ valor_total|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Productos Bajo Stock
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ productos_bajo_stock.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Fecha del Reporte
+                        </div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ "now"|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos con Stock Bajo -->
+{% if productos_bajo_stock %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-warning">
+            <i class="fas fa-exclamation-triangle"></i> Productos con Stock Bajo
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Diferencia</th>
+                        <th>Valor Unitario</th>
+                        <th>Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos_bajo_stock %}
+                    <tr class="table-warning">
+                        <td>{{ producto.codigo }}</td>
+                        <td>{{ producto.nombre }}</td>
+                        <td class="text-center">
+                            <span class="badge badge-danger">{{ producto.cantidad }}</span>
+                        </td>
+                        <td class="text-center">{{ producto.stock_minimo }}</td>
+                        <td class="text-center text-danger">
+                            {{ producto.stock_minimo|add:producto.cantidad|add:"-"|add:producto.cantidad }}
+                        </td>
+                        <td class="text-right">${{ producto.precio_unitario|floatformat:2 }}</td>
+                        <td class="text-right">${{ producto.valor_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Inventario Completo -->
+<div class="card shadow page-break">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list"></i> Inventario Completo
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="tablaInventario">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Stock</th>
+                        <th>Stock Mín.</th>
+                        <th>Precio Unit.</th>
+                        <th>Valor Total</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr {% if producto.necesita_restock %}class="table-warning"{% endif %}>
+                        <td>{{ producto.codigo }}</td>
+                        <td>{{ producto.nombre }}</td>
+                        <td>
+                            {% if producto.categoria %}
+                                {{ producto.categoria.nombre }}
+                            {% else %}
+                                <span class="text-muted">Sin categoría</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge {% if producto.necesita_restock %}badge-danger{% else %}badge-success{% endif %}">
+                                {{ producto.cantidad }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ producto.stock_minimo }}</td>
+                        <td class="text-right">${{ producto.precio_unitario|floatformat:2 }}</td>
+                        <td class="text-right"><strong>${{ producto.valor_total|floatformat:2 }}</strong></td>
+                        <td>
+                            {% if producto.estado == 'activo' %}
+                                <span class="badge badge-success">Activo</span>
+                            {% elif producto.estado == 'inactivo' %}
+                                <span class="badge badge-secondary">Inactivo</span>
+                            {% else %}
+                                <span class="badge badge-warning">Descontinuado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No hay productos registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-info">
+                        <th colspan="6" class="text-right">TOTAL GENERAL:</th>
+                        <th class="text-right">${{ valor_total|floatformat:2 }}</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Información del Reporte -->
+<div class="card shadow mt-4 no-print">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Información del Reporte</h6>
+                <p class="text-muted mb-0">
+                    <strong>Generado:</strong> {{ "now"|date:"d/m/Y H:i:s" }}<br>
+                    <strong>Usuario:</strong> {{ request.user.get_full_name|default:request.user.username }}<br>
+                    <strong>Total de registros:</strong> {{ total_productos }}
+                </p>
+            </div>
+            <div class="col-md-6">
+                <h6>Leyenda</h6>
+                <p class="text-muted mb-0">
+                    <span class="badge badge-success">Verde</span> Stock normal<br>
+                    <span class="badge badge-danger">Rojo</span> Stock bajo<br>
+                    <span class="badge badge-warning">Amarillo</span> Requiere atención
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function exportarExcel() {
+    // Crear una tabla temporal para exportar
+    const tabla = document.getElementById('tablaInventario').cloneNode(true);
+    
+    // Limpiar elementos no deseados para Excel
+    const badges = tabla.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        badge.outerHTML = badge.textContent;
+    });
+    
+    // Crear el contenido HTML para Excel
+    const html = `
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                table { border-collapse: collapse; width: 100%; }
+                th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+                .text-right { text-align: right; }
+                .text-center { text-align: center; }
+            </style>
+        </head>
+        <body>
+            <h2>Reporte de Inventario - ${new Date().toLocaleDateString('es-CO')}</h2>
+            ${tabla.outerHTML}
+        </body>
+        </html>
+    `;
+    
+    // Crear y descargar el archivo
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventario_${new Date().toISOString().split('T')[0]}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+// Mejorar la impresión
+window.addEventListener('beforeprint', function() {
+    document.title = `Reporte_Inventario_${new Date().toISOString().split('T')[0]}`;
+});
+</script>
+{% endblock %}
