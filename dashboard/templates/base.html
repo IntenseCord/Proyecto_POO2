@@ -381,20 +381,34 @@
         });
     </script>
     <script>
-        // Clear JWT tokens on logout click
+        // Intercept logout: call API to blacklist refresh, clear storage, then redirect
         (function(){
             const logoutLink = document.querySelector('a.dropdown-item.logout[href*="logout"]');
-            if (logoutLink) {
-                logoutLink.addEventListener('click', function(){
-                    try {
-                        sessionStorage.removeItem('access');
-                        sessionStorage.removeItem('refresh');
-                        sessionStorage.removeItem('user');
-                    } catch (e) {
-                        console.warn('Failed clearing sessionStorage tokens', e);
+            if (!logoutLink) return;
+            const logoutUrl = logoutLink.getAttribute('href');
+            logoutLink.addEventListener('click', async function(e){
+                e.preventDefault();
+                const access = sessionStorage.getItem('access');
+                const refresh = sessionStorage.getItem('refresh');
+                try {
+                    if (refresh) {
+                        await fetch('/api/auth/logout/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...(access ? { 'Authorization': `Bearer ${access}` } : {})
+                            },
+                            body: JSON.stringify({ refresh })
+                        }).catch(() => {});
                     }
-                });
-            }
+                } catch(_) {}
+                try {
+                    sessionStorage.removeItem('access');
+                    sessionStorage.removeItem('refresh');
+                    sessionStorage.removeItem('user');
+                } catch(_) {}
+                window.location.href = logoutUrl;
+            });
         })();
     </script>
     

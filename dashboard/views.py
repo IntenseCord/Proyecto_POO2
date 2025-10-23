@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
 from django.db.models import Sum, Count
 from empresa.models import Empresa
 from cuentas.models import Cuenta
@@ -8,6 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 @login_required
+@never_cache
 def dashboard_view(request):
     """Vista principal del dashboard con estadísticas"""
     

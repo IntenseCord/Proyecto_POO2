@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
@@ -335,6 +336,7 @@ def logout_view(request):
     return redirect('login:login')
 
 @login_required
+@never_cache
 def perfil_view(request):
     """Vista para ver y editar el perfil del usuario"""
     # Asegurar que el usuario tenga un perfil

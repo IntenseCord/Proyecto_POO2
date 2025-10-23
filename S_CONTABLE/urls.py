@@ -20,7 +20,7 @@ from django.shortcuts import redirect
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
-from login.api import MyTokenObtainPairView, MeView
+from login.api import MyTokenObtainPairView, MeView, LogoutView
 
 urlpatterns = [
     path('', lambda request: redirect('dashboard:home') if request.user.is_authenticated else redirect('login:landing'), name='home'),
@@ -35,6 +35,7 @@ urlpatterns = [
     # Custom JWT endpoints
     path('api/auth/login/', MyTokenObtainPairView.as_view(), name='auth_login'),
     path('api/auth/me/', MeView.as_view(), name='auth_me'),
+    path('api/auth/logout/', LogoutView.as_view(), name='auth_logout'),
 ]
 
 # Servir archivos media en desarrollo
