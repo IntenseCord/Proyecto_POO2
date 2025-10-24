@@ -1,3 +1,254 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum
+from django.db import transaction
+from django.core.exceptions import ValidationError
+from .models import Comprobante, DetalleComprobante, TipoComprobante
+from .forms import ComprobanteForm, DetalleComprobanteFormSet, FiltroComprobanteForm
+from empresa.models import Empresa
 
-# Create your views here.
+@login_required
+def lista_comprobantes(request):
+    """Lista todos los comprobantes con filtros"""
+    comprobantes = Comprobante.objects.select_related('empresa', 'usuario_creador').all()
+    
+    # Filtros
+    empresa_id = request.GET.get('empresa')
+    tipo = request.GET.get('tipo')
+    estado = request.GET.get('estado')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    if empresa_id:
+        comprobantes = comprobantes.filter(empresa_id=empresa_id)
+    
+    if tipo:
+        comprobantes = comprobantes.filter(tipo=tipo)
+    
+    if estado:
+        comprobantes = comprobantes.filter(estado=estado)
+    
+    if fecha_desde:
+        comprobantes = comprobantes.filter(fecha__gte=fecha_desde)
+    
+    if fecha_hasta:
+        comprobantes = comprobantes.filter(fecha__lte=fecha_hasta)
+    
+    # Paginación
+    paginator = Paginator(comprobantes, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Para los filtros
+    empresas = Empresa.objects.filter(activo=True)
+    
+    context = {
+        'page_obj': page_obj,
+        'empresas': empresas,
+        'tipos': TipoComprobante.choices,
+        'empresa_seleccionada': empresa_id,
+        'tipo_seleccionado': tipo,
+        'estado_seleccionado': estado,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+    }
+    
+    return render(request, 'transacciones/lista_comprobantes.html', context)
+
+@login_required
+def detalle_comprobante(request, comprobante_id):
+    """Muestra el detalle de un comprobante"""
+    comprobante = get_object_or_404(
+        Comprobante.objects.select_related('empresa', 'usuario_creador'),
+        id=comprobante_id
+    )
+    
+    # Obtener detalles ordenados
+    detalles = comprobante.detalles.select_related('cuenta').order_by('orden')
+    
+    context = {
+        'comprobante': comprobante,
+        'detalles': detalles,
+    }
+    
+    return render(request, 'transacciones/detalle_comprobante.html', context)
+
+@login_required
+@transaction.atomic
+def crear_comprobante(request):
+    """Crea un nuevo comprobante con sus detalles"""
+    if request.method == 'POST':
+        form = ComprobanteForm(request.POST)
+        formset = DetalleComprobanteFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            try:
+                # Guardar comprobante
+                comprobante = form.save(commit=False)
+                comprobante.usuario_creador = request.user
+                comprobante.save()
+                
+                # Guardar detalles
+                formset.instance = comprobante
+                detalles = formset.save(commit=False)
+                
+                # Asignar orden y guardar
+                for i, detalle in enumerate(detalles, start=1):
+                    detalle.orden = i
+                    detalle.full_clean()  # Validar
+                    detalle.save()
+                
+                # Calcular totales
+                comprobante.calcular_totales()
+                
+                messages.success(
+                    request, 
+                    f'Comprobante "{comprobante.numero}" creado exitosamente. '
+                    f'Total Débito: ${comprobante.total_debito:,.2f} - '
+                    f'Total Crédito: ${comprobante.total_credito:,.2f}'
+                )
+                
+                if comprobante.esta_balanceado():
+                    messages.info(request, '✅ El comprobante está balanceado y listo para aprobar.')
+                else:
+                    messages.warning(
+                        request, 
+                        '⚠️ El comprobante NO está balanceado. '
+                        f'Diferencia: ${abs(comprobante.total_debito - comprobante.total_credito):,.2f}'
+                    )
+                
+                return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+                
+            except ValidationError as e:
+                messages.error(request, f'Error de validación: {e}')
+    else:
+        form = ComprobanteForm()
+        formset = DetalleComprobanteFormSet()
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'titulo': 'Crear Comprobante',
+    }
+    
+    return render(request, 'transacciones/crear_comprobante.html', context)
+
+@login_required
+@transaction.atomic
+def editar_comprobante(request, comprobante_id):
+    """Edita un comprobante existente (solo si está en borrador)"""
+    comprobante = get_object_or_404(Comprobante, id=comprobante_id)
+    
+    if comprobante.estado != 'BORRADOR':
+        messages.error(request, 'Solo se pueden editar comprobantes en estado BORRADOR.')
+        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+    
+    if request.method == 'POST':
+        form = ComprobanteForm(request.POST, instance=comprobante)
+        formset = DetalleComprobanteFormSet(request.POST, instance=comprobante)
+        
+        if form.is_valid() and formset.is_valid():
+            try:
+                form.save()
+                
+                # Guardar detalles
+                detalles = formset.save(commit=False)
+                
+                # Eliminar detalles marcados para borrar
+                for detalle in formset.deleted_objects:
+                    detalle.delete()
+                
+                # Guardar y validar detalles
+                for i, detalle in enumerate(detalles, start=1):
+                    detalle.orden = i
+                    detalle.full_clean()
+                    detalle.save()
+                
+                # Recalcular totales
+                comprobante.calcular_totales()
+                
+                messages.success(request, f'Comprobante "{comprobante.numero}" actualizado exitosamente.')
+                
+                if comprobante.esta_balanceado():
+                    messages.info(request, '✅ El comprobante está balanceado.')
+                else:
+                    messages.warning(
+                        request,
+                        f'⚠️ Diferencia: ${abs(comprobante.total_debito - comprobante.total_credito):,.2f}'
+                    )
+                
+                return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+                
+            except ValidationError as e:
+                messages.error(request, f'Error de validación: {e}')
+    else:
+        form = ComprobanteForm(instance=comprobante)
+        formset = DetalleComprobanteFormSet(instance=comprobante)
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'comprobante': comprobante,
+        'titulo': 'Editar Comprobante',
+    }
+    
+    return render(request, 'transacciones/crear_comprobante.html', context)
+
+@login_required
+def aprobar_comprobante(request, comprobante_id):
+    """Aprueba un comprobante (valida partida doble)"""
+    comprobante = get_object_or_404(Comprobante, id=comprobante_id)
+    
+    if comprobante.estado != 'BORRADOR':
+        messages.error(request, 'Solo se pueden aprobar comprobantes en estado BORRADOR.')
+        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+    
+    if request.method == 'POST':
+        try:
+            comprobante.aprobar(usuario=request.user)
+            messages.success(request, f'✅ Comprobante "{comprobante.numero}" aprobado exitosamente.')
+        except ValidationError as e:
+            messages.error(request, f'❌ Error al aprobar: {e}')
+        
+        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+    
+    return render(request, 'transacciones/confirmar_aprobacion.html', {'comprobante': comprobante})
+
+@login_required
+def anular_comprobante(request, comprobante_id):
+    """Anula un comprobante aprobado"""
+    comprobante = get_object_or_404(Comprobante, id=comprobante_id)
+    
+    if comprobante.estado == 'ANULADO':
+        messages.error(request, 'El comprobante ya está anulado.')
+        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+    
+    if request.method == 'POST':
+        try:
+            comprobante.anular()
+            messages.success(request, f'Comprobante "{comprobante.numero}" anulado exitosamente.')
+        except ValidationError as e:
+            messages.error(request, f'Error al anular: {e}')
+        
+        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+    
+    return render(request, 'transacciones/confirmar_anulacion.html', {'comprobante': comprobante})
+
+@login_required
+def eliminar_comprobante(request, comprobante_id):
+    """Elimina un comprobante (solo si está en borrador)"""
+    comprobante = get_object_or_404(Comprobante, id=comprobante_id)
+    
+    if comprobante.estado != 'BORRADOR':
+        messages.error(request, 'Solo se pueden eliminar comprobantes en estado BORRADOR.')
+        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+    
+    if request.method == 'POST':
+        numero = comprobante.numero
+        comprobante.delete()
+        messages.success(request, f'Comprobante "{numero}" eliminado exitosamente.')
+        return redirect('transacciones:lista_comprobantes')
+    
+    return render(request, 'transacciones/confirmar_eliminacion.html', {'comprobante': comprobante})

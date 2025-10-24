@@ -144,17 +144,12 @@
             border-radius: 10px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.15);
             min-width: 220px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            z-index: 1000;
+            display: none;
+            z-index: 9999;
         }
         
         .user-info.active .user-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
+            display: block;
         }
         
         .dropdown-header {
@@ -294,9 +289,11 @@
             <a href="{% url 'admin:transacciones_comprobante_changelist' %}" class="menu-item">
                 <i class="fas fa-file-invoice"></i> Comprobantes
             </a>
+            {% if request.user.is_superuser %}
             <a href="{% url 'admin:index' %}" class="menu-item">
                 <i class="fas fa-cog"></i> Administración
             </a>
+            {% endif %}
         </nav>
     </div>
     
@@ -308,45 +305,59 @@
                 <h1>{% block page_title %}Dashboard{% endblock %}</h1>
             </div>
             <div class="topbar-right">
-                <div class="user-info" id="userDropdown">
-                    <div class="user-avatar">
-                        {% if request.user.perfil.foto %}
-                            <img src="{{ request.user.perfil.foto.url }}" alt="{{ request.user.username }}">
-                        {% else %}
-                            {{ request.user.username|slice:":1"|upper }}
-                        {% endif %}
-                    </div>
-                    <span><strong>{{ request.user.username }}</strong></span>
-                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                <!-- Dropdown de Bootstrap -->
+                <div class="dropdown">
+                    <button class="btn btn-link dropdown-toggle d-flex align-items-center gap-2 text-decoration-none" 
+                            type="button" 
+                            id="userDropdownBtn" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false"
+                            style="border: none; background: transparent; padding: 8px 15px; border-radius: 8px;">
+                        <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                            {% if request.user.perfil.foto %}
+                                <img src="{{ request.user.perfil.foto.url }}" alt="{{ request.user.username }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                                {{ request.user.username|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <span style="color: #2c3e50; font-weight: 600;">{{ request.user.username }}</span>
+                    </button>
                     
-                    <!-- Dropdown Menu -->
-                    <div class="user-dropdown">
-                        <div class="dropdown-header">
-                            <div class="user-avatar">
-                                {% if request.user.perfil.foto %}
-                                    <img src="{{ request.user.perfil.foto.url }}" alt="{{ request.user.username }}">
-                                {% else %}
-                                    {{ request.user.username|slice:":1"|upper }}
-                                {% endif %}
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdownBtn" style="min-width: 250px; border-radius: 10px; border: none; padding: 0;">
+                        <!-- Header del dropdown -->
+                        <li class="px-3 py-3 border-bottom" style="background: #f8f9fa;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar" style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                    {% if request.user.perfil.foto %}
+                                        <img src="{{ request.user.perfil.foto.url }}" alt="{{ request.user.username }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                    {% else %}
+                                        {{ request.user.username|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #2c3e50;">{{ request.user.get_full_name|default:request.user.username }}</div>
+                                    <div style="font-size: 13px; color: #7f8c8d;">@{{ request.user.username }}</div>
+                                </div>
                             </div>
-                            <h4>{{ request.user.get_full_name|default:request.user.username }}</h4>
-                            <p>@{{ request.user.username }}</p>
-                        </div>
-                        <div class="dropdown-menu">
-                            <a href="{% url 'login:perfil' %}" class="dropdown-item">
-                                <i class="fas fa-user"></i>
-                                <span>Mi Perfil</span>
-                            </a>
-                            <a href="{% url 'admin:index' %}" class="dropdown-item">
-                                <i class="fas fa-cog"></i>
-                                <span>Configuración</span>
-                            </a>
-                            <a href="{% url 'login:logout' %}" class="dropdown-item logout">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>Cerrar Sesión</span>
-                            </a>
-                        </div>
-                    </div>
+                        </li>
+                        
+                        <!-- Opciones del menú -->
+                        <li><a class="dropdown-item py-2" href="{% url 'login:perfil' %}">
+                            <i class="fas fa-user me-2" style="width: 20px;"></i> Mi Perfil
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'login:cambiar_contrasena' %}">
+                            <i class="fas fa-key me-2" style="width: 20px;"></i> Cambiar Contraseña
+                        </a></li>
+                        {% if request.user.is_superuser %}
+                        <li><a class="dropdown-item py-2" href="{% url 'admin:index' %}">
+                            <i class="fas fa-cog me-2" style="width: 20px;"></i> Configuración
+                        </a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li><a class="dropdown-item py-2 text-danger" href="{% url 'login:logout' %}">
+                            <i class="fas fa-sign-out-alt me-2" style="width: 20px;"></i> Cerrar Sesión
+                        </a></li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -368,28 +379,22 @@
         </div>
     </div>
     
-    <script>
-        // Toggle user dropdown
-        const userDropdown = document.getElementById('userDropdown');
+    <style>
+        /* Estilos para el dropdown de usuario */
+        #userDropdownBtn:hover {
+            background: #f8f9fa !important;
+        }
         
-        userDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-            this.classList.toggle('active');
-        });
+        .dropdown-item:hover {
+            background: #f8f9fa;
+            color: #667eea !important;
+        }
         
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!userDropdown.contains(e.target)) {
-                userDropdown.classList.remove('active');
-            }
-        });
-        
-        // Prevent dropdown from closing when clicking inside
-        const dropdown = userDropdown.querySelector('.user-dropdown');
-        dropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    </script>
+        .dropdown-item.text-danger:hover {
+            background: #fee;
+            color: #e74c3c !important;
+        }
+    </style>
     <script>
         // Intercept logout: call API to blacklist refresh, clear storage, then redirect
         (function(){

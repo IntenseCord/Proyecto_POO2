@@ -18,5 +18,6 @@ urlpatterns = [
     
     # Páginas privadas (requieren autenticación)
     path('perfil/', views.perfil_view, name='perfil'),
+    path('cambiar-contrasena/', views.cambiar_contrasena_view, name='cambiar_contrasena'),
     path('logout/', views.logout_view, name='logout'),
 ]

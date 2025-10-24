@@ -335,6 +335,46 @@ def perfil_view(request):
     
     return render(request, 'perfil.html', {'perfil': perfil})
 
+@login_required
+@never_cache
+def cambiar_contrasena_view(request):
+    """Vista para cambiar la contraseña del usuario"""
+    if request.method == 'POST':
+        password_actual = request.POST.get('password_actual')
+        password_nueva = request.POST.get('password_nueva')
+        password_confirmacion = request.POST.get('password_confirmacion')
+        
+        # Validar contraseña actual
+        if not request.user.check_password(password_actual):
+            messages.error(request, 'La contraseña actual es incorrecta')
+            return render(request, 'cambiar_contrasena.html')
+        
+        # Validar nueva contraseña
+        if not password_nueva or not password_confirmacion:
+            messages.error(request, 'Todos los campos son obligatorios')
+            return render(request, 'cambiar_contrasena.html')
+        
+        if password_nueva != password_confirmacion:
+            messages.error(request, 'Las contraseñas nuevas no coinciden')
+            return render(request, 'cambiar_contrasena.html')
+        
+        if len(password_nueva) < 6:
+            messages.error(request, 'La contraseña debe tener al menos 6 caracteres')
+            return render(request, 'cambiar_contrasena.html')
+        
+        # Cambiar contraseña
+        request.user.set_password(password_nueva)
+        request.user.save()
+        
+        # Mantener la sesión activa después del cambio
+        from django.contrib.auth import update_session_auth_hash
+        update_session_auth_hash(request, request.user)
+        
+        messages.success(request, '¡Contraseña cambiada exitosamente!')
+        return redirect('dashboard:home')
+    
+    return render(request, 'cambiar_contrasena.html')
+
 # ------------------------
 # Helpers de autenticación
 # ------------------------

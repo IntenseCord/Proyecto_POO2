@@ -126,7 +126,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- Estadísticas -->
+<!-- Estadísticas Principales -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon blue">
@@ -161,6 +161,62 @@
     </div>
 </div>
 
+<!-- Estadísticas de Inventario -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <div class="stat-value">{{ total_productos }}</div>
+        <div class="stat-label">Productos Activos</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-tags"></i>
+        </div>
+        <div class="stat-value">{{ total_categorias }}</div>
+        <div class="stat-label">Categorías</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-value">{{ productos_bajo_stock }}</div>
+        <div class="stat-label">Productos Bajo Stock</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon purple">
+            <i class="fas fa-warehouse"></i>
+        </div>
+        <div class="stat-value">${{ valor_inventario|floatformat:2 }}</div>
+        <div class="stat-label">Valor Total Inventario</div>
+    </div>
+</div>
+
+<!-- Estadísticas de Usuarios (Solo para Admin) -->
+{% if request.user.is_superuser %}
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); max-width: 600px;">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-value">{{ total_usuarios }}</div>
+        <div class="stat-label">Usuarios Activos</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <div class="stat-value">{{ usuarios_admin }}</div>
+        <div class="stat-label">Administradores</div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Gráficos -->
 <div class="grid-2">
     <div class="chart-container">
@@ -175,6 +231,33 @@
             <h3><i class="fas fa-chart-bar"></i> Balance Débito/Crédito</h3>
         </div>
         <canvas id="chartBalance"></canvas>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3><i class="fas fa-boxes"></i> Productos por Categoría</h3>
+        </div>
+        {% if productos_por_categoria %}
+            <canvas id="chartProductos"></canvas>
+        {% else %}
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 250px;">
+                <div style="text-align: center;">
+                    <i class="fas fa-box-open" style="font-size: 60px; color: #e9ecef; margin-bottom: 15px;"></i>
+                    <h4 style="color: #7f8c8d;">No hay productos con categoría</h4>
+                    <p style="color: #95a5a6; font-size: 14px;">Asigna categorías a tus productos para ver este gráfico</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="chart-container" style="display: flex; align-items: center; justify-content: center; min-height: 300px;">
+        <div style="text-align: center;">
+            <i class="fas fa-chart-line" style="font-size: 80px; color: #e9ecef; margin-bottom: 20px;"></i>
+            <h4 style="color: #7f8c8d;">Más gráficos próximamente</h4>
+            <p style="color: #95a5a6; font-size: 14px;">Estadísticas adicionales en desarrollo</p>
+        </div>
     </div>
 </div>
 
@@ -250,6 +333,77 @@
         </table>
     </div>
 </div>
+
+<!-- Tablas de Inventario -->
+<div class="grid-2">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3><i class="fas fa-exclamation-triangle" style="color: #f5576c;"></i> Productos con Bajo Stock</h3>
+        </div>
+        <div class="recent-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Stock Mín.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos_restock %}
+                    <tr>
+                        <td><strong>{{ producto.codigo }}</strong></td>
+                        <td>{{ producto.nombre }}</td>
+                        <td><span class="badge badge-danger">{{ producto.cantidad }}</span></td>
+                        <td>{{ producto.stock_minimo }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #7f8c8d;">✅ Todos los productos tienen stock suficiente</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3><i class="fas fa-exchange-alt"></i> Movimientos de Inventario Recientes</h3>
+        </div>
+        <div class="recent-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos_recientes %}
+                    <tr>
+                        <td><strong>{{ movimiento.producto.nombre }}</strong></td>
+                        <td>
+                            <span class="badge badge-{% if movimiento.tipo == 'ENTRADA' %}success{% elif movimiento.tipo == 'SALIDA' %}warning{% else %}danger{% endif %}">
+                                {{ movimiento.get_tipo_display }}
+                            </span>
+                        </td>
+                        <td>{{ movimiento.cantidad }}</td>
+                        <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #7f8c8d;">No hay movimientos registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -315,6 +469,46 @@
             scales: {
                 y: {
                     beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Productos por Categoría
+    const ctxProductos = document.getElementById('chartProductos').getContext('2d');
+    new Chart(ctxProductos, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for item in productos_por_categoria %}
+                    '{{ item.categoria__nombre }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Cantidad de Productos',
+                data: [
+                    {% for item in productos_por_categoria %}
+                        {{ item.total }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
                 }
             },
             plugins: {

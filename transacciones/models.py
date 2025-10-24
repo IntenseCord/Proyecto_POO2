@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from empresa.models import Empresa
 from cuentas.models import Cuenta
 
@@ -35,6 +37,45 @@ class Comprobante(models.Model):
     
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.numero} ({self.fecha})"
+    
+    def clean(self):
+        """Validar que débito = crédito cuando se aprueba"""
+        if self.estado == 'APROBADO':
+            if self.total_debito != self.total_credito:
+                raise ValidationError('Los débitos deben ser iguales a los créditos para aprobar el comprobante')
+            if self.total_debito == 0:
+                raise ValidationError('El comprobante debe tener al menos un movimiento')
+    
+    def calcular_totales(self):
+        """Calcula los totales de débito y crédito desde los detalles"""
+        from django.db.models import Sum
+        totales = self.detalles.aggregate(
+            total_debito=Sum('debito'),
+            total_credito=Sum('credito')
+        )
+        self.total_debito = totales['total_debito'] or 0
+        self.total_credito = totales['total_credito'] or 0
+        self.save()
+    
+    def aprobar(self, usuario=None):
+        """Aprueba el comprobante"""
+        self.calcular_totales()
+        if self.total_debito != self.total_credito:
+            raise ValidationError('No se puede aprobar: Los débitos no son iguales a los créditos')
+        self.estado = 'APROBADO'
+        self.fecha_aprobacion = timezone.now()
+        self.save()
+    
+    def anular(self):
+        """Anula el comprobante"""
+        if self.estado == 'ANULADO':
+            raise ValidationError('El comprobante ya está anulado')
+        self.estado = 'ANULADO'
+        self.save()
+    
+    def esta_balanceado(self):
+        """Verifica si el comprobante está balanceado"""
+        return self.total_debito == self.total_credito
 
 class DetalleComprobante(models.Model):
     """Modelo para el detalle de cada comprobante"""
@@ -52,3 +93,12 @@ class DetalleComprobante(models.Model):
     
     def __str__(self):
         return f"{self.cuenta.codigo} - Débito: {self.debito} - Crédito: {self.credito}"
+    
+    def clean(self):
+        """Validar que no se registren débito y crédito al mismo tiempo"""
+        if self.debito > 0 and self.credito > 0:
+            raise ValidationError('No se puede registrar débito y crédito en la misma línea')
+        if self.debito == 0 and self.credito == 0:
+            raise ValidationError('Debe registrar un valor en débito o crédito')
+        if not self.cuenta.acepta_movimiento:
+            raise ValidationError(f'La cuenta {self.cuenta.codigo} no acepta movimientos')

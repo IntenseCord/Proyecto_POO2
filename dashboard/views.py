@@ -1,12 +1,15 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper
 from empresa.models import Empresa
 from cuentas.models import Cuenta
 from transacciones.models import Comprobante, DetalleComprobante
+from inventario.models import Producto, Categoria, MovimientoInventario
+from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 
 @login_required
 @never_cache
@@ -26,6 +29,28 @@ def dashboard_view(request):
         total_creditos=Sum('credito')
     )
     
+    # Estadísticas de inventario
+    total_productos = Producto.objects.filter(estado='activo').count()
+    total_categorias = Categoria.objects.count()
+    productos_bajo_stock = Producto.objects.filter(
+        cantidad__lte=F('stock_minimo'),
+        estado='activo'
+    ).count()
+    
+    # Valor total del inventario
+    valor_inventario = Producto.objects.filter(estado='activo').aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F('cantidad') * F('precio_unitario'),
+                output_field=DecimalField()
+            )
+        )
+    )['total'] or Decimal('0.00')
+    
+    # Estadísticas de usuarios
+    total_usuarios = User.objects.filter(is_active=True).count()
+    usuarios_admin = User.objects.filter(is_superuser=True, is_active=True).count()
+    
     # Comprobantes recientes
     comprobantes_recientes = Comprobante.objects.select_related('empresa').order_by('-fecha_creacion')[:5]
     
@@ -37,15 +62,45 @@ def dashboard_view(request):
     # Últimas empresas registradas
     empresas_recientes = Empresa.objects.filter(activo=True).order_by('-fecha_creacion')[:5]
     
+    # Productos con bajo stock
+    productos_restock = Producto.objects.filter(
+        cantidad__lte=F('stock_minimo'),
+        estado='activo'
+    ).order_by('cantidad')[:5]
+    
+    # Movimientos de inventario recientes
+    movimientos_recientes = MovimientoInventario.objects.select_related(
+        'producto', 'usuario'
+    ).order_by('-fecha')[:5]
+    
+    # Productos por categoría (para gráfico)
+    productos_por_categoria = Producto.objects.filter(
+        estado='activo',
+        categoria__isnull=False  # Excluir productos sin categoría
+    ).values(
+        'categoria__nombre'
+    ).annotate(
+        total=Count('id')
+    ).order_by('-total')[:5]
+    
     context = {
         'total_empresas': total_empresas,
         'total_cuentas': total_cuentas,
         'total_comprobantes': total_comprobantes,
         'total_debitos': totales['total_debitos'] or 0,
         'total_creditos': totales['total_creditos'] or 0,
+        'total_productos': total_productos,
+        'total_categorias': total_categorias,
+        'productos_bajo_stock': productos_bajo_stock,
+        'valor_inventario': valor_inventario,
+        'total_usuarios': total_usuarios,
+        'usuarios_admin': usuarios_admin,
         'comprobantes_recientes': comprobantes_recientes,
         'comprobantes_por_tipo': comprobantes_por_tipo,
         'empresas_recientes': empresas_recientes,
+        'productos_restock': productos_restock,
+        'movimientos_recientes': movimientos_recientes,
+        'productos_por_categoria': productos_por_categoria,
     }
     
     return render(request, 'dashboard/dashboard.html', context)
