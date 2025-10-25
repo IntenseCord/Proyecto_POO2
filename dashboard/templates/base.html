@@ -289,6 +289,9 @@
             <a href="{% url 'admin:transacciones_comprobante_changelist' %}" class="menu-item">
                 <i class="fas fa-file-invoice"></i> Comprobantes
             </a>
+            <a href="{% url 'cuentas:reportes_menu' %}" class="menu-item {% if 'reportes' in request.path %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i> Reportes Financieros
+            </a>
             {% if request.user.is_superuser %}
             <a href="{% url 'admin:index' %}" class="menu-item">
                 <i class="fas fa-cog"></i> Administración

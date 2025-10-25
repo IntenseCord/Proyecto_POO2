@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Estado de Resultados{% endblock %}
+{% block page_title %}Estado de Resultados{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filtros-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    
+    .btn-generar {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    
+    .btn-generar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(17, 153, 142, 0.3);
+    }
+    
+    .reporte-header {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .reporte-header h2 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .reporte-header p {
+        color: #7f8c8d;
+        margin: 5px 0;
+    }
+    
+    .seccion-reporte {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .seccion-reporte h3 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .cuenta-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .cuenta-item:last-child {
+        border-bottom: none;
+    }
+    
+    .cuenta-nombre {
+        color: #2c3e50;
+    }
+    
+    .cuenta-codigo {
+        color: #7f8c8d;
+        font-size: 14px;
+        margin-right: 10px;
+    }
+    
+    .cuenta-monto {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .subtotal {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 0;
+        margin-top: 10px;
+        border-top: 2px solid #e9ecef;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .total-final {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .total-final.perdida {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .total-final h3 {
+        margin: 0;
+        font-size: 24px;
+    }
+    
+    .total-final .monto {
+        font-size: 32px;
+        font-weight: 700;
+    }
+    
+    .resultado-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .resultado-badge.utilidad {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .resultado-badge.perdida {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="filtros-card">
+    <h3 style="margin-bottom: 20px;"><i class="fas fa-filter"></i> Filtros del Reporte</h3>
+    <form method="GET">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="empresa_id">Empresa *</label>
+                <select name="empresa_id" id="empresa_id" class="form-control" required>
+                    <option value="">Seleccione una empresa</option>
+                    {% for empresa in empresas %}
+                    <option value="{{ empresa.id }}">{{ empresa.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha_inicio">Fecha Inicio</label>
+                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha_fin">Fecha Fin</label>
+                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control">
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-generar">
+            <i class="fas fa-chart-line"></i> Generar Reporte
+        </button>
+    </form>
+</div>
+
+{% if reporte %}
+<div class="reporte-header">
+    <h2>{{ reporte.empresa.nombre }}</h2>
+    <p><strong>Estado de Resultados</strong></p>
+    {% if reporte.fecha_inicio and reporte.fecha_fin %}
+    <p>Del {{ reporte.fecha_inicio|date:"d/m/Y" }} al {{ reporte.fecha_fin|date:"d/m/Y" }}</p>
+    {% else %}
+    <p>Todos los períodos</p>
+    {% endif %}
+    <span class="resultado-badge {% if reporte.resultado == 'UTILIDAD' %}utilidad{% else %}perdida{% endif %}">
+        {{ reporte.resultado }}
+    </span>
+</div>
+
+<!-- Ingresos -->
+<div class="seccion-reporte">
+    <h3><i class="fas fa-arrow-up" style="color: #38ef7d;"></i> Ingresos</h3>
+    {% for cuenta in reporte.ingresos %}
+    <div class="cuenta-item">
+        <div>
+            <span class="cuenta-codigo">{{ cuenta.codigo }}</span>
+            <span class="cuenta-nombre">{{ cuenta.nombre }}</span>
+        </div>
+        <span class="cuenta-monto">${{ cuenta.monto|floatformat:2 }}</span>
+    </div>
+    {% empty %}
+    <p style="color: #7f8c8d; text-align: center;">No hay ingresos en el período</p>
+    {% endfor %}
+    
+    <div class="subtotal">
+        <span>Total Ingresos</span>
+        <span>${{ reporte.totales.ingresos|floatformat:2 }}</span>
+    </div>
+</div>
+
+<!-- Costos -->
+<div class="seccion-reporte">
+    <h3><i class="fas fa-minus-circle" style="color: #f5576c;"></i> Costos</h3>
+    {% for cuenta in reporte.costos %}
+    <div class="cuenta-item">
+        <div>
+            <span class="cuenta-codigo">{{ cuenta.codigo }}</span>
+            <span class="cuenta-nombre">{{ cuenta.nombre }}</span>
+        </div>
+        <span class="cuenta-monto">${{ cuenta.monto|floatformat:2 }}</span>
+    </div>
+    {% empty %}
+    <p style="color: #7f8c8d; text-align: center;">No hay costos en el período</p>
+    {% endfor %}
+    
+    <div class="subtotal">
+        <span>Total Costos</span>
+        <span>${{ reporte.totales.costos|floatformat:2 }}</span>
+    </div>
+    
+    <div class="subtotal" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+        <span><strong>Utilidad Bruta</strong></span>
+        <span><strong>${{ reporte.totales.utilidad_bruta|floatformat:2 }}</strong></span>
+    </div>
+</div>
+
+<!-- Gastos -->
+<div class="seccion-reporte">
+    <h3><i class="fas fa-arrow-down" style="color: #f093fb;"></i> Gastos Operacionales</h3>
+    {% for cuenta in reporte.gastos %}
+    <div class="cuenta-item">
+        <div>
+            <span class="cuenta-codigo">{{ cuenta.codigo }}</span>
+            <span class="cuenta-nombre">{{ cuenta.nombre }}</span>
+        </div>
+        <span class="cuenta-monto">${{ cuenta.monto|floatformat:2 }}</span>
+    </div>
+    {% empty %}
+    <p style="color: #7f8c8d; text-align: center;">No hay gastos en el período</p>
+    {% endfor %}
+    
+    <div class="subtotal">
+        <span>Total Gastos</span>
+        <span>${{ reporte.totales.gastos|floatformat:2 }}</span>
+    </div>
+</div>
+
+<!-- Resultado Final -->
+<div class="total-final {% if reporte.totales.utilidad_neta < 0 %}perdida{% endif %}">
+    <div>
+        <h3>
+            {% if reporte.totales.utilidad_neta > 0 %}
+            <i class="fas fa-smile"></i> Utilidad Neta
+            {% else %}
+            <i class="fas fa-frown"></i> Pérdida Neta
+            {% endif %}
+        </h3>
+        <p style="margin: 0; opacity: 0.9;">Resultado del Período</p>
+    </div>
+    <div class="monto">
+        ${{ reporte.totales.utilidad_neta|floatformat:2 }}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

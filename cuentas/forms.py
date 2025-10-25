@@ -5,7 +5,7 @@ from empresa.models import Empresa
 class CuentaForm(forms.ModelForm):
     class Meta:
         model = Cuenta
-        fields = ['empresa', 'codigo', 'nombre', 'tipo', 'cuenta_padre', 'naturaleza', 'acepta_movimiento', 'activo']
+        fields = ['empresa', 'codigo', 'nombre', 'tipo', 'cuenta_padre', 'naturaleza', 'acepta_movimiento', 'esta_activa']
         widgets = {
             'empresa': forms.Select(attrs={
                 'class': 'form-control'
@@ -30,7 +30,7 @@ class CuentaForm(forms.ModelForm):
             'acepta_movimiento': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
-            'activo': forms.CheckboxInput(attrs={
+            'esta_activa': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
@@ -42,7 +42,7 @@ class CuentaForm(forms.ModelForm):
             'cuenta_padre': 'Cuenta Padre (Opcional)',
             'naturaleza': 'Naturaleza',
             'acepta_movimiento': 'Acepta Movimientos',
-            'activo': 'Cuenta Activa',
+            'esta_activa': 'Cuenta Activa',
         }
         help_texts = {
             'codigo': 'Código único para la cuenta (Ej: 1105 para Caja)',
@@ -58,14 +58,14 @@ class CuentaForm(forms.ModelForm):
                 empresa_id = int(self.data.get('empresa'))
                 self.fields['cuenta_padre'].queryset = Cuenta.objects.filter(
                     empresa_id=empresa_id, 
-                    activo=True
+                    esta_activa=True
                 ).order_by('codigo')
             except (ValueError, TypeError):
                 pass
         elif self.instance.pk:
             self.fields['cuenta_padre'].queryset = Cuenta.objects.filter(
                 empresa=self.instance.empresa,
-                activo=True
+                esta_activa=True
             ).exclude(pk=self.instance.pk).order_by('codigo')
     
     def clean(self):

@@ -126,7 +126,8 @@
 {% endblock %}
 
 {% block content %}
-<!-- Estadísticas Principales -->
+<!-- Estadísticas Principales (Solo Administradores) -->
+{% if es_admin %}
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon blue">
@@ -160,6 +161,14 @@
         <div class="stat-label">Total Débitos</div>
     </div>
 </div>
+{% else %}
+<!-- Mensaje de Bienvenida para Usuarios Normales -->
+<div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; text-align: center;">
+    <i class="fas fa-user-circle" style="font-size: 60px; color: #667eea; margin-bottom: 15px;"></i>
+    <h2 style="color: #2c3e50; margin-bottom: 10px;">Bienvenido, {{ request.user.get_full_name|default:request.user.username }}</h2>
+    <p style="color: #7f8c8d;">Aquí puedes ver las estadísticas de inventario y gestionar tus productos.</p>
+</div>
+{% endif %}
 
 <!-- Estadísticas de Inventario -->
 <div class="stats-grid">
@@ -217,7 +226,8 @@
 </div>
 {% endif %}
 
-<!-- Gráficos -->
+<!-- Gráficos Contables (Solo Administradores) -->
+{% if es_admin %}
 <div class="grid-2">
     <div class="chart-container">
         <div class="chart-header">
@@ -233,6 +243,7 @@
         <canvas id="chartBalance"></canvas>
     </div>
 </div>
+{% endif %}
 
 <div class="grid-2">
     <div class="chart-container">
@@ -261,7 +272,8 @@
     </div>
 </div>
 
-<!-- Tablas Recientes -->
+<!-- Tablas Recientes (Solo Administradores) -->
+{% if es_admin %}
 <div class="chart-container">
     <div class="chart-header">
         <h3><i class="fas fa-clock"></i> Comprobantes Recientes</h3>
@@ -333,8 +345,9 @@
         </table>
     </div>
 </div>
+{% endif %}
 
-<!-- Tablas de Inventario -->
+<!-- Productos con Bajo Stock (Todos los usuarios) -->
 <div class="grid-2">
     <div class="chart-container">
         <div class="chart-header">
@@ -409,6 +422,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    {% if es_admin %}
     // Gráfico de Comprobantes por Tipo
     const ctxComprobantes = document.getElementById('chartComprobantes').getContext('2d');
     new Chart(ctxComprobantes, {
@@ -478,8 +492,10 @@
             }
         }
     });
+    {% endif %}
     
-    // Gráfico de Productos por Categoría
+    // Gráfico de Productos por Categoría (Todos los usuarios)
+    {% if productos_por_categoria %}
     const ctxProductos = document.getElementById('chartProductos').getContext('2d');
     new Chart(ctxProductos, {
         type: 'bar',
@@ -518,5 +534,6 @@
             }
         }
     });
+    {% endif %}
 </script>
 {% endblock %}

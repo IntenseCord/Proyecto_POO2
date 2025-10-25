@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes Financieros{% endblock %}
+{% block page_title %}Reportes Financieros{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reportes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+    }
+    
+    .reporte-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .reporte-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .reporte-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: white;
+        margin-bottom: 20px;
+    }
+    
+    .reporte-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .reporte-icon.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .reporte-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    
+    .reporte-card h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .reporte-card p {
+        color: #7f8c8d;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .info-box {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    
+    .info-box h4 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .info-box p {
+        color: #7f8c8d;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="info-box">
+    <h4><i class="fas fa-info-circle"></i> Reportes Contables</h4>
+    <p>Seleccione el reporte financiero que desea generar. Cada reporte muestra información contable específica de su empresa.</p>
+</div>
+
+<div class="reportes-grid">
+    <a href="{% url 'cuentas:balance_comprobacion' %}" class="reporte-card">
+        <div class="reporte-icon blue">
+            <i class="fas fa-balance-scale"></i>
+        </div>
+        <h3>Balance de Comprobación</h3>
+        <p>Muestra todas las cuentas con sus débitos, créditos y saldos. Verifica que la contabilidad esté balanceada.</p>
+    </a>
+    
+    <a href="{% url 'cuentas:estado_resultados' %}" class="reporte-card">
+        <div class="reporte-icon green">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h3>Estado de Resultados</h3>
+        <p>Muestra los ingresos, gastos y costos del período. Calcula la utilidad o pérdida neta de la empresa.</p>
+    </a>
+    
+    <a href="{% url 'cuentas:balance_general' %}" class="reporte-card">
+        <div class="reporte-icon orange">
+            <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+        <h3>Balance General</h3>
+        <p>Estado de situación financiera. Muestra activos, pasivos y patrimonio. Verifica la ecuación contable.</p>
+    </a>
+</div>
+{% endblock %}

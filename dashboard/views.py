@@ -14,22 +14,34 @@ from decimal import Decimal
 @login_required
 @never_cache
 def dashboard_view(request):
-    """Vista principal del dashboard con estadísticas"""
+    """Vista principal del dashboard con estadísticas personalizadas según el usuario"""
     
-    # Obtener estadísticas generales
-    total_empresas = Empresa.objects.filter(activo=True).count()
-    total_cuentas = Cuenta.objects.filter(activo=True).count()
-    total_comprobantes = Comprobante.objects.filter(estado='APROBADO').count()
+    # Verificar si es administrador
+    es_admin = request.user.is_superuser
     
-    # Calcular totales de débitos y créditos
-    totales = DetalleComprobante.objects.filter(
-        comprobante__estado='APROBADO'
-    ).aggregate(
-        total_debitos=Sum('debito'),
-        total_creditos=Sum('credito')
-    )
+    # Obtener estadísticas generales (solo admin ve todo el sistema)
+    if es_admin:
+        total_empresas = Empresa.objects.filter(activo=True).count()
+        total_cuentas = Cuenta.objects.filter(esta_activa=True).count()
+        total_comprobantes = Comprobante.objects.filter(estado='APROBADO').count()
+    else:
+        # Usuarios normales: estadísticas limitadas o de su empresa
+        total_empresas = 0  # No ven empresas
+        total_cuentas = 0   # No ven plan de cuentas completo
+        total_comprobantes = 0  # No ven comprobantes
     
-    # Estadísticas de inventario
+    # Calcular totales de débitos y créditos (solo admin)
+    if es_admin:
+        totales = DetalleComprobante.objects.filter(
+            comprobante__estado='APROBADO'
+        ).aggregate(
+            total_debitos=Sum('debito'),
+            total_creditos=Sum('credito')
+        )
+    else:
+        totales = {'total_debitos': 0, 'total_creditos': 0}
+    
+    # Estadísticas de inventario (todos los usuarios)
     total_productos = Producto.objects.filter(estado='activo').count()
     total_categorias = Categoria.objects.count()
     productos_bajo_stock = Producto.objects.filter(
@@ -47,20 +59,33 @@ def dashboard_view(request):
         )
     )['total'] or Decimal('0.00')
     
-    # Estadísticas de usuarios
-    total_usuarios = User.objects.filter(is_active=True).count()
-    usuarios_admin = User.objects.filter(is_superuser=True, is_active=True).count()
+    # Estadísticas de usuarios (solo admin)
+    if es_admin:
+        total_usuarios = User.objects.filter(is_active=True).count()
+        usuarios_admin = User.objects.filter(is_superuser=True, is_active=True).count()
+    else:
+        total_usuarios = 0
+        usuarios_admin = 0
     
-    # Comprobantes recientes
-    comprobantes_recientes = Comprobante.objects.select_related('empresa').order_by('-fecha_creacion')[:5]
+    # Comprobantes recientes (solo admin)
+    if es_admin:
+        comprobantes_recientes = Comprobante.objects.select_related('empresa').order_by('-fecha_creacion')[:5]
+    else:
+        comprobantes_recientes = []
     
-    # Comprobantes por tipo (para gráfico)
-    comprobantes_por_tipo = Comprobante.objects.values('tipo').annotate(
-        total=Count('id')
-    ).order_by('-total')
+    # Comprobantes por tipo (para gráfico - solo admin)
+    if es_admin:
+        comprobantes_por_tipo = Comprobante.objects.values('tipo').annotate(
+            total=Count('id')
+        ).order_by('-total')
+    else:
+        comprobantes_por_tipo = []
     
-    # Últimas empresas registradas
-    empresas_recientes = Empresa.objects.filter(activo=True).order_by('-fecha_creacion')[:5]
+    # Últimas empresas registradas (solo admin)
+    if es_admin:
+        empresas_recientes = Empresa.objects.filter(activo=True).order_by('-fecha_creacion')[:5]
+    else:
+        empresas_recientes = []
     
     # Productos con bajo stock
     productos_restock = Producto.objects.filter(
@@ -84,6 +109,7 @@ def dashboard_view(request):
     ).order_by('-total')[:5]
     
     context = {
+        'es_admin': es_admin,  # Variable para controlar visualización
         'total_empresas': total_empresas,
         'total_cuentas': total_cuentas,
         'total_comprobantes': total_comprobantes,

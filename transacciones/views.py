@@ -252,3 +252,156 @@ def eliminar_comprobante(request, comprobante_id):
         return redirect('transacciones:lista_comprobantes')
     
     return render(request, 'transacciones/confirmar_eliminacion.html', {'comprobante': comprobante})
+
+
+# ============================================
+# VISTAS DE DOCUMENTOS CONTABLES (ABSTRACCIÓN)
+# ============================================
+
+@login_required
+def crear_factura_venta(request):
+    """
+    Crea una factura de venta que automáticamente genera un asiento contable.
+    Usa la clase FacturaVenta que implementa ABSTRACCIÓN.
+    """
+    from .documentos import FacturaVenta
+    from datetime import date
+    
+    empresas = Empresa.objects.filter(activo=True)
+    
+    if request.method == 'POST':
+        try:
+            empresa_id = request.POST.get('empresa')
+            empresa = Empresa.objects.get(id=empresa_id)
+            
+            # Crear la factura usando la clase abstracta
+            factura = FacturaVenta(
+                empresa=empresa,
+                fecha=request.POST.get('fecha') or date.today(),
+                descripcion=request.POST.get('descripcion'),
+                cliente=request.POST.get('cliente'),
+                forma_pago=request.POST.get('forma_pago', 'CREDITO')
+            )
+            
+            # Agregar items
+            items_count = int(request.POST.get('items_count', 0))
+            for i in range(items_count):
+                descripcion = request.POST.get(f'item_descripcion_{i}')
+                cantidad = Decimal(request.POST.get(f'item_cantidad_{i}', 0))
+                precio = Decimal(request.POST.get(f'item_precio_{i}', 0))
+                
+                if descripcion and cantidad > 0 and precio > 0:
+                    factura.agregar_item(descripcion, cantidad, precio)
+            
+            # Generar el asiento contable automáticamente
+            comprobante = factura.generar_asiento()
+            
+            messages.success(request, f'Factura creada exitosamente. Comprobante #{comprobante.numero}')
+            return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la factura: {str(e)}')
+    
+    context = {
+        'empresas': empresas,
+    }
+    
+    return render(request, 'transacciones/documentos/crear_factura_venta.html', context)
+
+
+@login_required
+def crear_nota_credito(request):
+    """
+    Crea una nota de crédito que automáticamente genera un asiento contable.
+    Usa la clase NotaCredito que implementa ABSTRACCIÓN.
+    """
+    from .documentos import NotaCredito
+    from datetime import date
+    
+    empresas = Empresa.objects.filter(activo=True)
+    
+    if request.method == 'POST':
+        try:
+            empresa_id = request.POST.get('empresa')
+            empresa = Empresa.objects.get(id=empresa_id)
+            
+            # Crear la nota de crédito usando la clase abstracta
+            nota = NotaCredito(
+                empresa=empresa,
+                fecha=request.POST.get('fecha') or date.today(),
+                descripcion=request.POST.get('descripcion'),
+                cliente=request.POST.get('cliente')
+            )
+            
+            # Agregar items
+            items_count = int(request.POST.get('items_count', 0))
+            for i in range(items_count):
+                descripcion = request.POST.get(f'item_descripcion_{i}')
+                cantidad = Decimal(request.POST.get(f'item_cantidad_{i}', 0))
+                precio = Decimal(request.POST.get(f'item_precio_{i}', 0))
+                
+                if descripcion and cantidad > 0 and precio > 0:
+                    nota.agregar_item(descripcion, cantidad, precio)
+            
+            # Generar el asiento contable automáticamente
+            comprobante = nota.generar_asiento()
+            
+            messages.success(request, f'Nota de Crédito creada exitosamente. Comprobante #{comprobante.numero}')
+            return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la nota de crédito: {str(e)}')
+    
+    context = {
+        'empresas': empresas,
+    }
+    
+    return render(request, 'transacciones/documentos/crear_nota_credito.html', context)
+
+
+@login_required
+def crear_recibo_caja(request):
+    """
+    Crea un recibo de caja que automáticamente genera un asiento contable.
+    Usa la clase ReciboCaja que implementa ABSTRACCIÓN.
+    """
+    from .documentos import ReciboCaja
+    from datetime import date
+    
+    empresas = Empresa.objects.filter(activo=True)
+    
+    if request.method == 'POST':
+        try:
+            empresa_id = request.POST.get('empresa')
+            empresa = Empresa.objects.get(id=empresa_id)
+            
+            # Crear el recibo usando la clase abstracta
+            recibo = ReciboCaja(
+                empresa=empresa,
+                fecha=request.POST.get('fecha') or date.today(),
+                descripcion=request.POST.get('descripcion'),
+                cliente=request.POST.get('cliente'),
+                monto=Decimal(request.POST.get('monto', 0)),
+                forma_pago=request.POST.get('forma_pago', 'EFECTIVO')
+            )
+            
+            # Generar el asiento contable automáticamente
+            comprobante = recibo.generar_asiento()
+            
+            messages.success(request, f'Recibo de Caja creado exitosamente. Comprobante #{comprobante.numero}')
+            return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear el recibo: {str(e)}')
+    
+    context = {
+        'empresas': empresas,
+    }
+    
+    return render(request, 'transacciones/documentos/crear_recibo_caja.html', context)
+
+
+@login_required
+def menu_documentos(request):
+    """Menú principal de documentos contables"""
+    return render(request, 'transacciones/documentos/menu.html')

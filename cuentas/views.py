@@ -44,7 +44,7 @@ def lista_cuentas(request):
         'empresa_seleccionada': empresa_id,
         'tipo_seleccionado': tipo,
         'busqueda': busqueda,
-        'total_cuentas': Cuenta.objects.filter(activo=True).count(),
+        'total_cuentas': Cuenta.objects.filter(esta_activa=True).count(),
     }
     
     return render(request, 'cuentas/lista_cuentas.html', context)
@@ -58,7 +58,7 @@ def arbol_cuentas(request, empresa_id):
     cuentas_raiz = Cuenta.objects.filter(
         empresa=empresa,
         cuenta_padre__isnull=True,
-        activo=True
+        esta_activa=True
     ).order_by('codigo')
     
     context = {
@@ -74,7 +74,7 @@ def detalle_cuenta(request, cuenta_id):
     cuenta = get_object_or_404(Cuenta.objects.select_related('empresa', 'cuenta_padre'), id=cuenta_id)
     
     # Obtener subcuentas
-    subcuentas = cuenta.subcuentas.filter(activo=True).order_by('codigo')
+    subcuentas = cuenta.subcuentas.filter(esta_activa=True).order_by('codigo')
     
     # Estadísticas de movimientos
     total_movimientos = cuenta.movimientos.count()
@@ -155,14 +155,144 @@ def eliminar_cuenta(request, cuenta_id):
         return redirect('cuentas:detalle_cuenta', cuenta_id=cuenta.id)
     
     # Verificar si tiene subcuentas activas
-    if cuenta.subcuentas.filter(activo=True).exists():
+    if cuenta.subcuentas.filter(esta_activa=True).exists():
         messages.error(request, 'No se puede desactivar una cuenta con subcuentas activas.')
         return redirect('cuentas:detalle_cuenta', cuenta_id=cuenta.id)
     
     if request.method == 'POST':
-        cuenta.activo = False
+        cuenta.esta_activa = False
         cuenta.save()
         messages.success(request, f'Cuenta "{cuenta.codigo} - {cuenta.nombre}" desactivada exitosamente.')
         return redirect('cuentas:lista_cuentas')
     
     return render(request, 'cuentas/confirmar_eliminacion.html', {'cuenta': cuenta})
+
+
+# ============================================
+# VISTAS DE REPORTES FINANCIEROS
+# ============================================
+
+@login_required
+def reportes_menu(request):
+    """Menú principal de reportes financieros"""
+    empresas = Empresa.objects.filter(activo=True)
+    
+    context = {
+        'empresas': empresas,
+    }
+    
+    return render(request, 'cuentas/reportes/menu.html', context)
+
+
+@login_required
+def balance_comprobacion_view(request):
+    """Vista para el Balance de Comprobación"""
+    from .reportes import BalanceComprobacion
+    from datetime import datetime
+    
+    empresas = Empresa.objects.filter(activo=True)
+    reporte_data = None
+    
+    if request.method == 'GET' and 'empresa_id' in request.GET:
+        empresa_id = request.GET.get('empresa_id')
+        fecha_inicio = request.GET.get('fecha_inicio')
+        fecha_fin = request.GET.get('fecha_fin')
+        
+        try:
+            empresa = Empresa.objects.get(id=empresa_id)
+            
+            # Convertir fechas si existen
+            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+            fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+            
+            # Generar reporte
+            reporte = BalanceComprobacion(empresa, fecha_inicio_obj, fecha_fin_obj)
+            reporte_data = reporte.generar()
+            
+        except Empresa.DoesNotExist:
+            messages.error(request, 'Empresa no encontrada.')
+        except ValueError:
+            messages.error(request, 'Formato de fecha inválido.')
+    
+    context = {
+        'empresas': empresas,
+        'reporte': reporte_data,
+    }
+    
+    return render(request, 'cuentas/reportes/balance_comprobacion.html', context)
+
+
+@login_required
+def estado_resultados_view(request):
+    """Vista para el Estado de Resultados"""
+    from .reportes import EstadoResultados
+    from datetime import datetime
+    
+    empresas = Empresa.objects.filter(activo=True)
+    reporte_data = None
+    
+    if request.method == 'GET' and 'empresa_id' in request.GET:
+        empresa_id = request.GET.get('empresa_id')
+        fecha_inicio = request.GET.get('fecha_inicio')
+        fecha_fin = request.GET.get('fecha_fin')
+        
+        try:
+            empresa = Empresa.objects.get(id=empresa_id)
+            
+            # Convertir fechas si existen
+            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+            fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+            
+            # Generar reporte
+            reporte = EstadoResultados(empresa, fecha_inicio_obj, fecha_fin_obj)
+            reporte_data = reporte.generar()
+            
+        except Empresa.DoesNotExist:
+            messages.error(request, 'Empresa no encontrada.')
+        except ValueError:
+            messages.error(request, 'Formato de fecha inválido.')
+    
+    context = {
+        'empresas': empresas,
+        'reporte': reporte_data,
+    }
+    
+    return render(request, 'cuentas/reportes/estado_resultados.html', context)
+
+
+@login_required
+def balance_general_view(request):
+    """Vista para el Balance General"""
+    from .reportes import BalanceGeneral
+    from datetime import datetime
+    
+    empresas = Empresa.objects.filter(activo=True)
+    reporte_data = None
+    
+    if request.method == 'GET' and 'empresa_id' in request.GET:
+        empresa_id = request.GET.get('empresa_id')
+        fecha_inicio = request.GET.get('fecha_inicio')
+        fecha_fin = request.GET.get('fecha_fin')
+        
+        try:
+            empresa = Empresa.objects.get(id=empresa_id)
+            
+            # Convertir fechas si existen
+            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+            fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+            
+            # Generar reporte
+            reporte = BalanceGeneral(empresa, fecha_inicio_obj, fecha_fin_obj)
+            reporte_data = reporte.generar()
+            
+        except Empresa.DoesNotExist:
+            messages.error(request, 'Empresa no encontrada.')
+        except ValueError:
+            messages.error(request, 'Formato de fecha inválido.')
+    
+    context = {
+        'empresas': empresas,
+        'reporte': reporte_data,
+    }
+    
+    return render(request, 'cuentas/reportes/balance_general.html', context)
