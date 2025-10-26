@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.db import models
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
+from django.views.decorators.cache import never_cache
 from .models import Producto, Categoria, MovimientoInventario
 from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
 
@@ -13,6 +14,7 @@ from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
 DETALLE_PRODUCTO_URL = 'inventario:detalle_producto'
 
 @login_required
+@never_cache
 @require_GET
 def inventario_dashboard(request):
     """Dashboard principal del inventario"""
@@ -42,6 +44,7 @@ def inventario_dashboard(request):
     return render(request, 'inventario/dashboard.html', context)
 
 @login_required
+@never_cache
 @require_GET
 def lista_productos(request):
     """Lista todos los productos con filtros y paginación"""
@@ -84,6 +87,7 @@ def lista_productos(request):
     return render(request, 'inventario/lista_productos.html', context)
 
 @login_required
+@never_cache
 @require_GET
 def detalle_producto(request, producto_id):
     """Muestra el detalle de un producto"""
@@ -98,6 +102,7 @@ def detalle_producto(request, producto_id):
     return render(request, 'inventario/detalle_producto.html', context)
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def crear_producto(request):
@@ -116,6 +121,7 @@ def crear_producto(request):
     return render(request, 'inventario/crear_producto.html', {'form': form})
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def editar_producto(request, producto_id):
@@ -137,6 +143,7 @@ def editar_producto(request, producto_id):
     })
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def eliminar_producto(request, producto_id):
@@ -152,6 +159,7 @@ def eliminar_producto(request, producto_id):
     return render(request, 'inventario/confirmar_eliminacion.html', {'producto': producto})
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def crear_movimiento(request, producto_id):
@@ -194,6 +202,7 @@ def crear_movimiento(request, producto_id):
     })
 
 @login_required
+@never_cache
 @require_GET
 def lista_movimientos(request):
     """Lista todos los movimientos de inventario con filtros"""
@@ -237,6 +246,7 @@ def lista_movimientos(request):
     return render(request, 'inventario/lista_movimientos.html', context)
 
 @login_required
+@never_cache
 @require_GET
 def lista_categorias(request):
     """Lista todas las categorías"""
@@ -245,6 +255,7 @@ def lista_categorias(request):
 
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @login_required
+@never_cache
 @require_http_methods(['GET', 'POST'])
 def crear_categoria(request):
     """Crea una nueva categoría"""
@@ -260,6 +271,7 @@ def crear_categoria(request):
     return render(request, 'inventario/crear_categoria.html', {'form': form})
 
 @login_required
+@never_cache
 @require_GET
 def reporte_inventario(request):
     """Genera reporte de inventario"""

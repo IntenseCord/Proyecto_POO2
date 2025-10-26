@@ -471,13 +471,17 @@
               {% endif %}
               <li><hr class="dropdown-divider my-1" /></li>
               <li>
-                <a
-                  class="dropdown-item py-2 text-danger"
-                  href="{% url 'login:logout' %}"
-                >
-                  <i class="fas fa-sign-out-alt me-2" style="width: 20px"></i>
-                  Cerrar Sesión
-                </a>
+                <form method="post" action="{% url 'login:logout' %}" style="margin: 0;">
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="dropdown-item py-2 text-danger"
+                    style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;"
+                  >
+                    <i class="fas fa-sign-out-alt me-2" style="width: 20px"></i>
+                    Cerrar Sesión
+                  </button>
+                </form>
               </li>
             </ul>
           </div>

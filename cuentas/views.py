@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
+from django.views.decorators.cache import never_cache
 from .models import Cuenta, TipoCuenta
 from .forms import CuentaForm, FiltroCuentaForm
 from empresa.models import Empresa
@@ -14,6 +15,7 @@ ERROR_EMPRESA_NO_ENCONTRADA = 'Empresa no encontrada.'
 ERROR_FORMATO_FECHA_INVALIDO = 'Formato de fecha inválido.'
 
 @login_required
+@never_cache
 @require_GET
 def lista_cuentas(request):
     """Lista todas las cuentas con filtros jerárquicos"""
@@ -57,6 +59,7 @@ def lista_cuentas(request):
     return render(request, 'cuentas/lista_cuentas.html', context)
 
 @login_required
+@never_cache
 @require_GET
 def arbol_cuentas(request, empresa_id):
     """Muestra el árbol jerárquico de cuentas de una empresa"""
@@ -77,6 +80,7 @@ def arbol_cuentas(request, empresa_id):
     return render(request, 'cuentas/arbol_cuentas.html', context)
 
 @login_required
+@never_cache
 @require_GET
 def detalle_cuenta(request, cuenta_id):
     """Muestra el detalle de una cuenta"""
@@ -109,6 +113,7 @@ def detalle_cuenta(request, cuenta_id):
     return render(request, 'cuentas/detalle_cuenta.html', context)
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def crear_cuenta(request):
@@ -131,6 +136,7 @@ def crear_cuenta(request):
     return render(request, 'cuentas/crear_cuenta.html', {'form': form})
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def editar_cuenta(request, cuenta_id):
@@ -158,6 +164,7 @@ def editar_cuenta(request, cuenta_id):
     })
 
 @login_required
+@never_cache
 # NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def eliminar_cuenta(request, cuenta_id):
@@ -188,6 +195,7 @@ def eliminar_cuenta(request, cuenta_id):
 # ============================================
 
 @login_required
+@never_cache
 @require_GET
 def reportes_menu(request):
     """Menú principal de reportes financieros"""
@@ -201,6 +209,7 @@ def reportes_menu(request):
 
 
 @login_required
+@never_cache
 @require_GET
 def balance_comprobacion_view(request):
     """Vista para el Balance de Comprobación"""
@@ -240,6 +249,7 @@ def balance_comprobacion_view(request):
 
 
 @login_required
+@never_cache
 @require_GET
 def estado_resultados_view(request):
     """Vista para el Estado de Resultados"""
@@ -279,6 +289,7 @@ def estado_resultados_view(request):
 
 
 @login_required
+@never_cache
 @require_GET
 def balance_general_view(request):
     """Vista para el Balance General"""
