@@ -51,3 +51,8 @@ Thumbs.db
 # Cache
 __pycache__/
 *.pyc
+
+# SonarScanner
+.scannerwork/
+coverage.xml
+.coverage

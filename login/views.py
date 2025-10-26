@@ -9,11 +9,18 @@ from django.conf import settings
 from django.urls import reverse
 from .models import VerificacionEmail, Perfil, RecuperacionContrasena, IntentoLogin
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Constantes para evitar duplicación de literales en redirecciones
 DASHBOARD_HOME = 'dashboard:home'
 LOGIN_TEMPLATE = 'login.html'
 LOGIN_ROUTE_NAME = 'login:login'
+CAMBIAR_CONTRASENA_TEMPLATE = 'cambiar_contrasena.html'
+
+# Mensajes de error comunes
+ERROR_PASSWORD_TOO_SHORT = 'La contraseña debe tener al menos 6 caracteres'
 
 def landing_view(request):
     """Vista para la página de bienvenida"""
@@ -148,7 +155,7 @@ Equipo de Sistema Contable
             fail_silently=False,
         )
     except Exception as e:
-        print(f"Error al enviar email: {e}")
+        logger.error(f"Error al enviar email de verificación a {user.email}: {e}")
 
 def verificar_email_view(request, token):
     """Vista para verificar el email del usuario"""
@@ -231,7 +238,7 @@ def restablecer_contrasena_view(request, token):
             elif password1 != password2:
                 messages.error(request, 'Las contraseñas no coinciden')
             elif len(password1) < 6:
-                messages.error(request, 'La contraseña debe tener al menos 6 caracteres')
+                messages.error(request, ERROR_PASSWORD_TOO_SHORT)
             else:
                 # Cambiar contraseña
                 user = recuperacion.user
@@ -294,7 +301,7 @@ Equipo de Sistema Contable
             fail_silently=False,
         )
     except Exception as e:
-        print(f"Error al enviar email: {e}")
+        logger.error(f"Error al enviar email de recuperación a {user.email}: {e}")
 
 def logout_view(request):
     """Vista para cerrar sesión"""
@@ -347,20 +354,20 @@ def cambiar_contrasena_view(request):
         # Validar contraseña actual
         if not request.user.check_password(password_actual):
             messages.error(request, 'La contraseña actual es incorrecta')
-            return render(request, 'cambiar_contrasena.html')
+            return render(request, CAMBIAR_CONTRASENA_TEMPLATE)
         
         # Validar nueva contraseña
         if not password_nueva or not password_confirmacion:
             messages.error(request, 'Todos los campos son obligatorios')
-            return render(request, 'cambiar_contrasena.html')
+            return render(request, CAMBIAR_CONTRASENA_TEMPLATE)
         
         if password_nueva != password_confirmacion:
             messages.error(request, 'Las contraseñas nuevas no coinciden')
-            return render(request, 'cambiar_contrasena.html')
+            return render(request, CAMBIAR_CONTRASENA_TEMPLATE)
         
         if len(password_nueva) < 6:
-            messages.error(request, 'La contraseña debe tener al menos 6 caracteres')
-            return render(request, 'cambiar_contrasena.html')
+            messages.error(request, ERROR_PASSWORD_TOO_SHORT)
+            return render(request, CAMBIAR_CONTRASENA_TEMPLATE)
         
         # Cambiar contraseña
         request.user.set_password(password_nueva)
@@ -373,7 +380,7 @@ def cambiar_contrasena_view(request):
         messages.success(request, '¡Contraseña cambiada exitosamente!')
         return redirect('dashboard:home')
     
-    return render(request, 'cambiar_contrasena.html')
+    return render(request, CAMBIAR_CONTRASENA_TEMPLATE)
 
 # ------------------------
 # Helpers de autenticación
@@ -451,7 +458,7 @@ def _validate_registration(
     if password1 != password2:
         return 'Las contraseñas no coinciden'
     if len(password1) < 6:
-        return 'La contraseña debe tener al menos 6 caracteres'
+        return ERROR_PASSWORD_TOO_SHORT
     if User.objects.filter(username=username).exists():
         return 'El nombre de usuario ya existe'
     if email and User.objects.filter(email=email).exists():

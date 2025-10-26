@@ -14,7 +14,7 @@ class CuentaAdmin(admin.ModelAdmin):
         try:
             saldo = obj.calcular_saldo()
             return f"${saldo:,.2f}"
-        except:
+        except Exception:
             return "N/A"
     calcular_saldo.short_description = 'Saldo'
 
