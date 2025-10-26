@@ -1,5 +1,10 @@
-{% extends 'base.html' %} {% block title %}Dashboard - Sistema Contable{%
-endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema Contable{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
 <style>
   .stats-grid {
     display: grid;
@@ -136,7 +141,9 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
     margin-bottom: 30px;
   }
 </style>
-{% endblock %} {% block content %}
+{% endblock %}
+
+{% block content %}
 <!-- Estadísticas Principales (Solo Administradores) -->
 {% if es_admin %}
 <div class="stats-grid">
@@ -232,6 +239,43 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
   </div>
 </div>
 
+<!-- Estadísticas Financieras del Mes (Para todos los usuarios) -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon green">
+      <i class="fas fa-arrow-up"></i>
+    </div>
+    <div class="stat-value">${{ ingresos_mes|floatformat:2 }}</div>
+    <div class="stat-label">Ingresos del Mes</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon orange">
+      <i class="fas fa-arrow-down"></i>
+    </div>
+    <div class="stat-value">${{ egresos_mes|floatformat:2 }}</div>
+    <div class="stat-label">Egresos del Mes</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon {% if utilidad_mes >= 0 %}purple{% else %}orange{% endif %}">
+      <i class="fas fa-chart-line"></i>
+    </div>
+    <div class="stat-value" style="color: {% if utilidad_mes >= 0 %}#28a745{% else %}#dc3545{% endif %}">
+      ${{ utilidad_mes|floatformat:2 }}
+    </div>
+    <div class="stat-label">Utilidad del Mes</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon blue">
+      <i class="fas fa-hand-holding-usd"></i>
+    </div>
+    <div class="stat-value">${{ cuentas_por_cobrar|floatformat:2 }}</div>
+    <div class="stat-label">Cuentas por Cobrar</div>
+  </div>
+</div>
+
 <!-- Estadísticas de Usuarios (Solo para Admin) -->
 {% if request.user.is_superuser %}
 <div
@@ -284,7 +328,9 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
       <h3><i class="fas fa-boxes"></i> Productos por Categoría</h3>
     </div>
     {% if productos_por_categoria %}
-    <canvas id="chartProductos"></canvas>
+    <div style="padding: 20px; height: 350px;">
+      <canvas id="chartProductos"></canvas>
+    </div>
     {% else %}
     <div
       style="
@@ -308,25 +354,45 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
     {% endif %}
   </div>
 
-  <div
-    class="chart-container"
-    style="
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 300px;
-    "
-  >
-    <div style="text-align: center">
-      <i
-        class="fas fa-chart-line"
-        style="font-size: 80px; color: #e9ecef; margin-bottom: 20px"
-      ></i>
-      <h4 style="color: #7f8c8d">Más gráficos próximamente</h4>
-      <p style="color: #95a5a6; font-size: 14px">
-        Estadísticas adicionales en desarrollo
-      </p>
+  <div class="chart-container">
+    <div class="chart-header">
+      <h3><i class="fas fa-chart-pie"></i> Movimientos por Tipo</h3>
     </div>
+    {% if movimientos_por_tipo %}
+    <div style="padding: 20px; height: 350px;">
+      <canvas id="movimientosTipoChart"></canvas>
+    </div>
+    {% else %}
+    <div
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 250px;
+      "
+    >
+      <div style="text-align: center">
+        <i
+          class="fas fa-exchange-alt"
+          style="font-size: 60px; color: #e9ecef; margin-bottom: 15px"
+        ></i>
+        <h4 style="color: #7f8c8d">No hay movimientos registrados</h4>
+        <p style="color: #95a5a6; font-size: 14px">
+          Registra movimientos de inventario para ver este gráfico
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Gráfico de Ingresos vs Egresos (Para todos los usuarios) -->
+<div class="chart-container">
+  <div class="chart-header">
+    <h3><i class="fas fa-chart-bar"></i> Ingresos vs Egresos del Mes</h3>
+  </div>
+  <div style="padding: 20px; height: 350px;">
+    <canvas id="ingresosEgresosChart"></canvas>
   </div>
 </div>
 
@@ -474,7 +540,7 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
             <td><strong>{{ movimiento.producto.nombre }}</strong></td>
             <td>
               <span
-                class="badge badge-{% if movimiento.tipo == 'ENTRADA' %}success{% elif movimiento.tipo == 'SALIDA' %}warning{% else %}danger{% endif %}"
+                class="badge badge-{% if movimiento.tipo == 'entrada' %}success{% elif movimiento.tipo == 'salida' %}danger{% else %}warning{% endif %}"
               >
                 {{ movimiento.get_tipo_display }}
               </span>
@@ -494,7 +560,9 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
     </div>
   </div>
 </div>
-{% endblock %} {% block extra_js %}
+{% endblock %}
+
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-qMbf16KOR+VfmVchEKf/tSDfRnFvGqQDvjvVkwEKCh4VQVL6vvXpCaVvVjTnCqNu" crossorigin="anonymous"></script>
 <script>
   {% if es_admin %}
@@ -610,5 +678,103 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
       }
   });
   {% endif %}
+
+  // Gráfico de Movimientos por Tipo (visible para todos)
+  {% if movimientos_por_tipo %}
+  console.log('Datos de movimientos:', {{ movimientos_por_tipo|safe }});
+  const ctxMovimientos = document.getElementById('movimientosTipoChart');
+  if (!ctxMovimientos) {
+    console.error('No se encontró el canvas movimientosTipoChart');
+  } else {
+    const ctx = ctxMovimientos.getContext('2d');
+  new Chart(ctxMovimientos, {
+      type: 'doughnut',
+      data: {
+          labels: [
+              {% for item in movimientos_por_tipo %}
+                  '{{ item.tipo|title }}',
+              {% endfor %}
+          ],
+          datasets: [{
+              data: [
+                  {% for item in movimientos_por_tipo %}
+                      {{ item.total }},
+                  {% endfor %}
+              ],
+              backgroundColor: [
+                  '#28a745',  // Verde para entrada
+                  '#dc3545',  // Rojo para salida
+                  '#ffc107',  // Amarillo para ajuste
+              ],
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              legend: {
+                  position: 'bottom',
+              }
+          }
+      }
+  });
+  }
+  {% endif %}
+
+  // Gráfico de Ingresos vs Egresos del Mes (visible para todos)
+  const ctxIngresosEgresos = document.getElementById('ingresosEgresosChart');
+  if (ctxIngresosEgresos) {
+    new Chart(ctxIngresosEgresos.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Ingresos', 'Egresos', 'Utilidad'],
+        datasets: [{
+          label: 'Monto ($)',
+          data: [
+            {{ ingresos_mes }},
+            {{ egresos_mes }},
+            {{ utilidad_mes }}
+          ],
+          backgroundColor: [
+            'rgba(40, 167, 69, 0.8)',   // Verde para ingresos
+            'rgba(220, 53, 69, 0.8)',   // Rojo para egresos
+            '{% if utilidad_mes >= 0 %}rgba(102, 126, 234, 0.8){% else %}rgba(255, 193, 7, 0.8){% endif %}'  // Azul si positivo, amarillo si negativo
+          ],
+          borderColor: [
+            'rgba(40, 167, 69, 1)',
+            'rgba(220, 53, 69, 1)',
+            '{% if utilidad_mes >= 0 %}rgba(102, 126, 234, 1){% else %}rgba(255, 193, 7, 1){% endif %}'
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '$' + value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return '$' + context.parsed.y.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+  }
 </script>
 {% endblock %}

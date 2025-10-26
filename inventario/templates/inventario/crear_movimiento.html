@@ -1,0 +1,110 @@
+{% extends 'inventario/base_inventario.html' %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="{% url 'dashboard:home' %}">Dashboard</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:dashboard' %}">Inventario</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:lista_productos' %}">Productos</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:detalle_producto' producto.id %}">{{ producto.nombre }}</a>
+  </li>
+  <li class="breadcrumb-item active">Nuevo Movimiento</li>
+</ol>
+{% endblock %}
+
+{% block page_title %}Registrar Movimiento - {{ producto.nombre }}{% endblock %}
+
+{% block page_actions %}
+<a
+  href="{% url 'inventario:detalle_producto' producto.id %}"
+  class="btn btn-outline-secondary"
+>
+  <i class="fas fa-arrow-left"></i> Volver
+</a>
+{% endblock %}
+
+{% block inventario_content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-exchange-alt"></i> Información del Movimiento
+        </h6>
+      </div>
+      <div class="card-body">
+        <!-- Información del Producto -->
+        <div class="alert alert-info">
+          <strong>Producto:</strong> {{ producto.nombre }}<br>
+          <strong>Stock Actual:</strong> {{ producto.cantidad }} unidades<br>
+          <strong>Stock Mínimo:</strong> {{ producto.stock_minimo }} unidades
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="{{ form.tipo.id_for_label }}" class="form-label">
+              {{ form.tipo.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.tipo }}
+            {% if form.tipo.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.tipo.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ form.cantidad.id_for_label }}" class="form-label">
+              {{ form.cantidad.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.cantidad }}
+            {% if form.cantidad.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.cantidad.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ form.motivo.id_for_label }}" class="form-label">
+              {{ form.motivo.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.motivo }}
+            {% if form.motivo.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.motivo.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a
+              href="{% url 'inventario:detalle_producto' producto.id %}"
+              class="btn btn-outline-secondary me-md-2"
+            >
+              <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-save"></i> Registrar Movimiento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

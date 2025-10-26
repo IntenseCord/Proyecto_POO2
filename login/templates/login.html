@@ -293,31 +293,56 @@
             }
         </script>
     <script>
+        // Función para obtener el token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.querySelector('form');
             if (!form) return;
+            
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 const username = document.getElementById('username').value.trim();
                 const password = document.getElementById('password').value;
+                const csrftoken = getCookie('csrftoken');
+                
                 try {
                     const res = await fetch('/api/auth/login/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
                         body: JSON.stringify({ username, password })
                     });
+                    
                     if (!res.ok) {
                         console.error('JWT login failed', res.status);
                         alert('Credenciales inválidas o error del servidor');
                         return;
                     }
+                    
                     const data = await res.json();
                     sessionStorage.setItem('access', data.access);
                     sessionStorage.setItem('refresh', data.refresh);
                     sessionStorage.setItem('user', JSON.stringify(data.user));
-                    // Opcional: mostrar en consola
+                    
                     console.log('JWT access:', data.access);
                     const dest = (data.user && data.user.is_superuser) ? '/admin/' : '/dashboard/';
+                    
                     // Crear/actualizar input hidden 'next' y enviar el formulario para establecer la sesión de Django
                     let nextInput = form.querySelector('input[name="next"]');
                     if (!nextInput) {

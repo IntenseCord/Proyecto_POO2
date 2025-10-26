@@ -110,6 +110,70 @@ def dashboard_view(request):
         total=Count('id')
     ).order_by('-total')[:5]
     
+    # Movimientos por tipo (para gráfico)
+    movimientos_por_tipo = MovimientoInventario.objects.values('tipo').annotate(
+        total=Count('id'),
+        cantidad_total=Sum('cantidad')
+    ).order_by('tipo')
+    
+    # Movimientos de los últimos 7 días (para gráfico de línea)
+    fecha_hace_7_dias = timezone.now() - timedelta(days=7)
+    movimientos_ultimos_7_dias = MovimientoInventario.objects.filter(
+        fecha__gte=fecha_hace_7_dias
+    ).extra(
+        select={'fecha_dia': 'DATE(fecha)'}
+    ).values('fecha_dia', 'tipo').annotate(
+        total=Count('id')
+    ).order_by('fecha_dia')
+    
+    # Ingresos vs Egresos del mes actual (para todos los usuarios)
+    fecha_inicio_mes = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Calcular ingresos (entradas de inventario valoradas)
+    ingresos_mes = MovimientoInventario.objects.filter(
+        tipo='entrada',
+        fecha__gte=fecha_inicio_mes
+    ).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F('cantidad') * F('producto__precio_unitario'),
+                output_field=DecimalField()
+            )
+        )
+    )['total'] or Decimal('0.00')
+    
+    # Calcular egresos (salidas de inventario valoradas)
+    egresos_mes = MovimientoInventario.objects.filter(
+        tipo='salida',
+        fecha__gte=fecha_inicio_mes
+    ).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F('cantidad') * F('producto__precio_unitario'),
+                output_field=DecimalField()
+            )
+        )
+    )['total'] or Decimal('0.00')
+    
+    # Estado de Pérdidas y Ganancias (EPG) del mes
+    utilidad_mes = ingresos_mes - egresos_mes
+    
+    # Cuentas por Cobrar y Pagar (solo si existen comprobantes)
+    if es_admin:
+        cuentas_por_cobrar = DetalleComprobante.objects.filter(
+            comprobante__estado='APROBADO',
+            comprobante__tipo='VENTA'
+        ).aggregate(total=Sum('debito'))['total'] or Decimal('0.00')
+        
+        cuentas_por_pagar = DetalleComprobante.objects.filter(
+            comprobante__estado='APROBADO',
+            comprobante__tipo='COMPRA'
+        ).aggregate(total=Sum('credito'))['total'] or Decimal('0.00')
+    else:
+        # Para usuarios normales, usar datos de inventario
+        cuentas_por_cobrar = Decimal('0.00')
+        cuentas_por_pagar = Decimal('0.00')
+    
     context = {
         'es_admin': es_admin,  # Variable para controlar visualización
         'total_empresas': total_empresas,
@@ -129,6 +193,13 @@ def dashboard_view(request):
         'productos_restock': productos_restock,
         'movimientos_recientes': movimientos_recientes,
         'productos_por_categoria': productos_por_categoria,
+        'movimientos_por_tipo': movimientos_por_tipo,
+        'movimientos_ultimos_7_dias': movimientos_ultimos_7_dias,
+        'ingresos_mes': ingresos_mes,
+        'egresos_mes': egresos_mes,
+        'utilidad_mes': utilidad_mes,
+        'cuentas_por_cobrar': cuentas_por_cobrar,
+        'cuentas_por_pagar': cuentas_por_pagar,
     }
     
     return render(request, 'dashboard/dashboard.html', context)

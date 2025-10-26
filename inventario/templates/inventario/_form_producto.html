@@ -142,20 +142,16 @@ crear como en editar producto {% endcomment %}
       <div class="row">
         <div class="col-md-6">
           <small class="text-muted">
-            <strong>Creado:</strong> {{ producto.fecha_creacion|date:"d/m/Y H:i"
-            }}<br />
+            <strong>Creado:</strong> {{ producto.fecha_creacion|date:"d/m/Y H:i" }}<br />
             {% if producto.usuario_creador %}
-            <strong>Por:</strong> {{
-            producto.usuario_creador.get_full_name|default:producto.usuario_creador.username
-            }} {% endif %}
+            <strong>Por:</strong> {{ producto.usuario_creador.get_full_name|default:producto.usuario_creador.username }}
+            {% endif %}
           </small>
         </div>
         <div class="col-md-6">
           <small class="text-muted">
-            <strong>Última actualización:</strong> {{
-            producto.fecha_actualizacion|date:"d/m/Y H:i" }}<br />
-            <strong>Valor total actual:</strong> ${{
-            producto.valor_total|floatformat:2 }}
+            <strong>Última actualización:</strong> {{ producto.fecha_actualizacion|date:"d/m/Y H:i" }}<br />
+            <strong>Valor total actual:</strong> ${{ producto.valor_total|floatformat:2 }}
           </small>
         </div>
       </div>

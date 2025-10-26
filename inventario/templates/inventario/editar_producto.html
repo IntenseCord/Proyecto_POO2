@@ -1,4 +1,6 @@
-{% extends 'inventario/base_inventario.html' %} {% block breadcrumb %}
+{% extends 'inventario/base_inventario.html' %}
+
+{% block breadcrumb %}
 <ol class="breadcrumb">
   <li class="breadcrumb-item">
     <a href="{% url 'dashboard:home' %}">Dashboard</a>
@@ -16,8 +18,11 @@
   </li>
   <li class="breadcrumb-item active">Editar</li>
 </ol>
-{% endblock %} {% block page_title %}Editar Producto{% endblock %} {% block
-page_actions %}
+{% endblock %}
+
+{% block page_title %}Editar Producto{% endblock %}
+
+{% block page_actions %}
 <nav class="btn-group" aria-label="Acciones del producto">
   <a
     href="{% url 'inventario:detalle_producto' producto.id %}"
@@ -32,7 +37,9 @@ page_actions %}
     <i class="fas fa-trash"></i> Desactivar
   </a>
 </nav>
-{% endblock %} {% block inventario_content %}
+{% endblock %}
+
+{% block inventario_content %}
 <div class="row justify-content-center">
   <div class="col-lg-8">
     <div class="card shadow">
@@ -42,13 +49,16 @@ page_actions %}
         </h6>
       </div>
       <div class="card-body">
-        {% include 'inventario/_form_producto.html' with es_edicion=True
-        producto=producto texto_boton='Guardar Cambios' %}
+        {% include 'inventario/_form_producto.html' with es_edicion=True producto=producto texto_boton='Guardar Cambios' %}
       </div>
     </div>
   </div>
 </div>
 
-{% include 'inventario/_modal_categoria.html' %} {% endblock %} {% block
-extra_js %} {{ block.super }} {% include 'inventario/_producto_js.html' %} {%
-endblock %}
+{% include 'inventario/_modal_categoria.html' %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+{% include 'inventario/_producto_js.html' %}
+{% endblock %}

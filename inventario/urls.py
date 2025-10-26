@@ -15,6 +15,7 @@ urlpatterns = [
     path('productos/<int:producto_id>/eliminar/', views.eliminar_producto, name='eliminar_producto'),
     
     # Movimientos de inventario
+    path('movimientos/', views.lista_movimientos, name='lista_movimientos'),
     path('productos/<int:producto_id>/movimiento/', views.crear_movimiento, name='crear_movimiento'),
     
     # Categorías

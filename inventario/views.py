@@ -195,13 +195,57 @@ def crear_movimiento(request, producto_id):
 
 @login_required
 @require_GET
+def lista_movimientos(request):
+    """Lista todos los movimientos de inventario con filtros"""
+    movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').all().order_by('-fecha')
+    
+    # Filtros
+    producto_id = request.GET.get('producto')
+    tipo = request.GET.get('tipo')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    if producto_id:
+        movimientos = movimientos.filter(producto_id=producto_id)
+    
+    if tipo:
+        movimientos = movimientos.filter(tipo=tipo)
+    
+    if fecha_desde:
+        movimientos = movimientos.filter(fecha__gte=fecha_desde)
+    
+    if fecha_hasta:
+        movimientos = movimientos.filter(fecha__lte=fecha_hasta)
+    
+    # Paginación
+    paginator = Paginator(movimientos, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Productos para el filtro
+    productos = Producto.objects.filter(estado='activo').order_by('nombre')
+    
+    context = {
+        'page_obj': page_obj,
+        'productos': productos,
+        'producto_seleccionado': producto_id,
+        'tipo_seleccionado': tipo,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+    }
+    
+    return render(request, 'inventario/lista_movimientos.html', context)
+
+@login_required
+@require_GET
 def lista_categorias(request):
     """Lista todas las categorías"""
     categorias = Categoria.objects.all()
     return render(request, 'inventario/lista_categorias.html', {'categorias': categorias})
 
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @login_required
-@require_POST
+@require_http_methods(['GET', 'POST'])
 def crear_categoria(request):
     """Crea una nueva categoría"""
     if request.method == 'POST':

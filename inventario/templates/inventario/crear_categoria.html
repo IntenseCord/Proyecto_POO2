@@ -1,4 +1,6 @@
-{% extends 'inventario/base_inventario.html' %} {% block breadcrumb %}
+{% extends 'inventario/base_inventario.html' %}
+
+{% block breadcrumb %}
 <ol class="breadcrumb">
   <li class="breadcrumb-item">
     <a href="{% url 'dashboard:home' %}">Dashboard</a>
@@ -11,15 +13,20 @@
   </li>
   <li class="breadcrumb-item active">Nueva Categoría</li>
 </ol>
-{% endblock %} {% block page_title %}Crear Nueva Categoría{% endblock %} {%
-block page_actions %}
+{% endblock %}
+
+{% block page_title %}Crear Nueva Categoría{% endblock %}
+
+{% block page_actions %}
 <a
   href="{% url 'inventario:lista_categorias' %}"
   class="btn btn-outline-secondary"
 >
   <i class="fas fa-arrow-left"></i> Volver a Categorías
 </a>
-{% endblock %} {% block inventario_content %}
+{% endblock %}
+
+{% block inventario_content %}
 <div class="row justify-content-center">
   <div class="col-lg-6">
     <div class="card shadow">
@@ -49,8 +56,9 @@ block page_actions %}
             </label>
             {{ form.descripcion }} {% if form.descripcion.errors %}
             <div class="invalid-feedback d-block">
-              {% for error in form.descripcion.errors %} {{ error }} {% endfor
-              %}
+              {% for error in form.descripcion.errors %}
+              {{ error }}
+              {% endfor %}
             </div>
             {% endif %}
           </div>

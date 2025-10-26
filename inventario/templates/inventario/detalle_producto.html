@@ -1,4 +1,6 @@
-{% extends 'inventario/base_inventario.html' %} {% block breadcrumb %}
+{% extends 'inventario/base_inventario.html' %}
+
+{% block breadcrumb %}
 <ol class="breadcrumb">
   <li class="breadcrumb-item">
     <a href="{% url 'dashboard:home' %}">Dashboard</a>
@@ -11,8 +13,11 @@
   </li>
   <li class="breadcrumb-item active">{{ producto.nombre }}</li>
 </ol>
-{% endblock %} {% block page_title %}{{ producto.nombre }}{% endblock %} {%
-block page_actions %}
+{% endblock %}
+
+{% block page_title %}{{ producto.nombre }}{% endblock %}
+
+{% block page_actions %}
 <nav class="btn-group" aria-label="Acciones del producto">
   <a
     href="{% url 'inventario:editar_producto' producto.id %}"
@@ -33,7 +38,9 @@ block page_actions %}
     <i class="fas fa-arrow-left"></i> Volver
   </a>
 </nav>
-{% endblock %} {% block inventario_content %}
+{% endblock %}
+
+{% block inventario_content %}
 <div class="row">
   <!-- Información del Producto -->
   <div class="col-lg-8">
@@ -106,9 +113,7 @@ block page_actions %}
         <div class="mb-3">
           <div class="form-label text-muted">Creado por</div>
           <p>
-            {{
-            producto.usuario_creador.get_full_name|default:producto.usuario_creador.username
-            }}
+            {{ producto.usuario_creador.get_full_name|default:producto.usuario_creador.username }}
           </p>
         </div>
         {% endif %}
@@ -202,30 +207,29 @@ block page_actions %}
             <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
             <td>
               {% if movimiento.tipo == 'entrada' %}
-              <span class="badge badge-success">
+              <span class="badge" style="background-color: #28a745; color: white;">
                 <i class="fas fa-arrow-up"></i> Entrada
               </span>
               {% elif movimiento.tipo == 'salida' %}
-              <span class="badge badge-danger">
+              <span class="badge" style="background-color: #dc3545; color: white;">
                 <i class="fas fa-arrow-down"></i> Salida
               </span>
               {% else %}
-              <span class="badge badge-warning">
+              <span class="badge" style="background-color: #ffc107; color: #212529;">
                 <i class="fas fa-edit"></i> Ajuste
               </span>
               {% endif %}
             </td>
             <td>
               <strong>
-                {% if movimiento.tipo == 'salida' %}-{% elif movimiento.tipo ==
-                'entrada' %}+{% endif %}{{ movimiento.cantidad }}
+                {% if movimiento.tipo == 'salida' %}-{% elif movimiento.tipo == 'entrada' %}+{% endif %}{{ movimiento.cantidad }}
               </strong>
             </td>
             <td>{{ movimiento.motivo }}</td>
             <td>
-              {% if movimiento.usuario %} {{
-              movimiento.usuario.get_full_name|default:movimiento.usuario.username
-              }} {% else %}
+              {% if movimiento.usuario %}
+              {{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}
+              {% else %}
               <span class="text-muted">Sistema</span>
               {% endif %}
             </td>
