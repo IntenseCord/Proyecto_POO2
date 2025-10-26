@@ -346,8 +346,8 @@ page_actions %}
     );
 
     function calcularValorTotal() {
-      const cantidad = parseFloat(cantidadInput.value) || 0;
-      const precio = parseFloat(precioInput.value) || 0;
+      const cantidad = Number.parseFloat(cantidadInput.value) || 0;
+      const precio = Number.parseFloat(precioInput.value) || 0;
       const total = cantidad * precio;
 
       // Actualizar el texto en la información del registro

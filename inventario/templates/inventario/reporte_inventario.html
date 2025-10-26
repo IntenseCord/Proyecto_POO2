@@ -131,13 +131,13 @@ block page_actions %}
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th>Código</th>
-            <th>Producto</th>
-            <th>Stock Actual</th>
-            <th>Stock Mínimo</th>
-            <th>Diferencia</th>
-            <th>Valor Unitario</th>
-            <th>Valor Total</th>
+            <th scope="col">Código</th>
+            <th scope="col">Producto</th>
+            <th scope="col">Stock Actual</th>
+            <th scope="col">Stock Mínimo</th>
+            <th scope="col">Diferencia</th>
+            <th scope="col">Valor Unitario</th>
+            <th scope="col">Valor Total</th>
           </tr>
         </thead>
         <tbody>
@@ -181,14 +181,14 @@ block page_actions %}
       <table class="table table-bordered" id="tablaInventario">
         <thead>
           <tr>
-            <th>Código</th>
-            <th>Producto</th>
-            <th>Categoría</th>
-            <th>Stock</th>
-            <th>Stock Mín.</th>
-            <th>Precio Unit.</th>
-            <th>Valor Total</th>
-            <th>Estado</th>
+            <th scope="col">Código</th>
+            <th scope="col">Producto</th>
+            <th scope="col">Categoría</th>
+            <th scope="col">Stock</th>
+            <th scope="col">Stock Mín.</th>
+            <th scope="col">Precio Unit.</th>
+            <th scope="col">Valor Total</th>
+            <th scope="col">Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -320,7 +320,7 @@ block page_actions %}
     a.download = `inventario_${new Date().toISOString().split("T")[0]}.xls`;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    document.body.childNode.remove(a);
     globalThis.URL.revokeObjectURL(url);
   }
 
