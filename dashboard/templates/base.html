@@ -471,17 +471,13 @@
               {% endif %}
               <li><hr class="dropdown-divider my-1" /></li>
               <li>
-                <form method="post" action="{% url 'login:logout' %}" style="margin: 0;">
-                  {% csrf_token %}
-                  <button
-                    type="submit"
-                    class="dropdown-item py-2 text-danger"
-                    style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;"
-                  >
-                    <i class="fas fa-sign-out-alt me-2" style="width: 20px"></i>
-                    Cerrar Sesión
-                  </button>
-                </form>
+                <a
+                  class="dropdown-item py-2 text-danger logout"
+                  href="{% url 'login:logout' %}"
+                >
+                  <i class="fas fa-sign-out-alt me-2" style="width: 20px"></i>
+                  Cerrar Sesión
+                </a>
               </li>
             </ul>
           </div>
@@ -531,10 +527,25 @@
         );
         if (!logoutLink) return;
         const logoutUrl = logoutLink.getAttribute("href");
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
         logoutLink.addEventListener("click", async function (e) {
           e.preventDefault();
           const access = sessionStorage.getItem("access");
           const refresh = sessionStorage.getItem("refresh");
+          const csrftoken = getCookie('csrftoken');
           try {
             if (refresh) {
               await fetch("/api/auth/logout/", {
@@ -551,6 +562,19 @@
           } catch (error) {
             console.error("Error en el proceso de logout:", error);
           }
+          // Intentar cerrar sesión de Django con POST (requiere CSRF)
+          try {
+            await fetch(logoutUrl, {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': csrftoken,
+              },
+            }).catch((error) => {
+              console.error('Error al cerrar sesión de Django:', error);
+            });
+          } catch (error) {
+            console.error('Excepción cerrando sesión Django:', error);
+          }
           try {
             sessionStorage.removeItem("access");
             sessionStorage.removeItem("refresh");
@@ -558,7 +582,8 @@
           } catch (error) {
             console.error("Error al limpiar sessionStorage:", error);
           }
-          globalThis.location.href = logoutUrl;
+          // Redirigir a la página de login
+          globalThis.location.href = '/login/';
         });
       })();
     </script>
