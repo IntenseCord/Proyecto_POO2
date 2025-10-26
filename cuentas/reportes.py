@@ -13,6 +13,30 @@ from transacciones.models import DetalleComprobante
 from datetime import datetime
 
 
+def _determinar_resultado(monto):
+    """Helper: Determina si el resultado es UTILIDAD, PÉRDIDA o EQUILIBRIO"""
+    if monto > 0:
+        return 'UTILIDAD'
+    elif monto < 0:
+        return 'PÉRDIDA'
+    else:
+        return 'EQUILIBRIO'
+
+
+def _calcular_saldos_por_naturaleza(debito, credito, naturaleza):
+    """Helper: Calcula saldo deudor y acreedor según naturaleza de la cuenta"""
+    if naturaleza == 'DEBITO':
+        saldo = debito - credito
+        saldo_deudor = saldo if saldo > 0 else Decimal('0.00')
+        saldo_acreedor = abs(saldo) if saldo < 0 else Decimal('0.00')
+    else:  # CREDITO
+        saldo = credito - debito
+        saldo_acreedor = saldo if saldo > 0 else Decimal('0.00')
+        saldo_deudor = abs(saldo) if saldo < 0 else Decimal('0.00')
+    
+    return saldo_deudor, saldo_acreedor
+
+
 class ReporteFinanciero:
     """
     Clase base para reportes financieros.
@@ -81,14 +105,9 @@ class BalanceComprobacion(ReporteFinanciero):
             credito = movimientos_cuenta['credito'] or Decimal('0.00')
             
             # Calcular saldo según la naturaleza de la cuenta
-            if cuenta.naturaleza == 'DEBITO':
-                saldo = debito - credito
-                saldo_deudor = saldo if saldo > 0 else Decimal('0.00')
-                saldo_acreedor = abs(saldo) if saldo < 0 else Decimal('0.00')
-            else:  # CREDITO
-                saldo = credito - debito
-                saldo_acreedor = saldo if saldo > 0 else Decimal('0.00')
-                saldo_deudor = abs(saldo) if saldo < 0 else Decimal('0.00')
+            saldo_deudor, saldo_acreedor = _calcular_saldos_por_naturaleza(
+                debito, credito, cuenta.naturaleza
+            )
             
             # Solo incluir cuentas con movimiento
             if debito > 0 or credito > 0:
@@ -243,7 +262,7 @@ class EstadoResultados(ReporteFinanciero):
                 'utilidad_bruta': utilidad_bruta,
                 'utilidad_neta': utilidad_neta,
             },
-            'resultado': 'UTILIDAD' if utilidad_neta > 0 else 'PÉRDIDA' if utilidad_neta < 0 else 'EQUILIBRIO'
+            'resultado': _determinar_resultado(utilidad_neta)
         }
 
 
