@@ -6,6 +6,9 @@ from django.db.models import Q, Count
 from .models import Empresa
 from .forms import EmpresaForm
 
+# Constantes para evitar duplicación
+DETALLE_EMPRESA_URL = 'empresa:detalle_empresa'
+
 @login_required
 def lista_empresas(request):
     """Lista todas las empresas con filtros y paginación"""
@@ -68,7 +71,7 @@ def crear_empresa(request):
             empresa.usuario_creador = request.user
             empresa.save()
             messages.success(request, f'Empresa "{empresa.nombre}" creada exitosamente.')
-            return redirect('empresa:detalle_empresa', empresa_id=empresa.id)
+            return redirect(DETALLE_EMPRESA_URL, empresa_id=empresa.id)
     else:
         form = EmpresaForm()
     
@@ -84,7 +87,7 @@ def editar_empresa(request, empresa_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'Empresa "{empresa.nombre}" actualizada exitosamente.')
-            return redirect('empresa:detalle_empresa', empresa_id=empresa.id)
+            return redirect(DETALLE_EMPRESA_URL, empresa_id=empresa.id)
     else:
         form = EmpresaForm(instance=empresa)
     
@@ -113,4 +116,4 @@ def activar_empresa(request, empresa_id):
     empresa.activo = True
     empresa.save()
     messages.success(request, f'Empresa "{empresa.nombre}" activada exitosamente.')
-    return redirect('empresa:detalle_empresa', empresa_id=empresa.id)
+    return redirect(DETALLE_EMPRESA_URL, empresa_id=empresa.id)

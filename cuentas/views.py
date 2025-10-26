@@ -7,6 +7,11 @@ from .models import Cuenta, TipoCuenta
 from .forms import CuentaForm, FiltroCuentaForm
 from empresa.models import Empresa
 
+# Constantes para evitar duplicación
+DETALLE_CUENTA_URL = 'cuentas:detalle_cuenta'
+ERROR_EMPRESA_NO_ENCONTRADA = 'Empresa no encontrada.'
+ERROR_FORMATO_FECHA_INVALIDO = 'Formato de fecha inválido.'
+
 @login_required
 def lista_cuentas(request):
     """Lista todas las cuentas con filtros jerárquicos"""
@@ -113,7 +118,7 @@ def crear_cuenta(request):
                 cuenta.nivel = 1
             cuenta.save()
             messages.success(request, f'Cuenta "{cuenta.codigo} - {cuenta.nombre}" creada exitosamente.')
-            return redirect('cuentas:detalle_cuenta', cuenta_id=cuenta.id)
+            return redirect(DETALLE_CUENTA_URL, cuenta_id=cuenta.id)
     else:
         form = CuentaForm()
     
@@ -135,7 +140,7 @@ def editar_cuenta(request, cuenta_id):
                 cuenta.nivel = 1
             cuenta.save()
             messages.success(request, f'Cuenta "{cuenta.codigo} - {cuenta.nombre}" actualizada exitosamente.')
-            return redirect('cuentas:detalle_cuenta', cuenta_id=cuenta.id)
+            return redirect(DETALLE_CUENTA_URL, cuenta_id=cuenta.id)
     else:
         form = CuentaForm(instance=cuenta)
     
@@ -210,9 +215,9 @@ def balance_comprobacion_view(request):
             reporte_data = reporte.generar()
             
         except Empresa.DoesNotExist:
-            messages.error(request, 'Empresa no encontrada.')
+            messages.error(request, ERROR_EMPRESA_NO_ENCONTRADA)
         except ValueError:
-            messages.error(request, 'Formato de fecha inválido.')
+            messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
     
     context = {
         'empresas': empresas,
@@ -248,9 +253,9 @@ def estado_resultados_view(request):
             reporte_data = reporte.generar()
             
         except Empresa.DoesNotExist:
-            messages.error(request, 'Empresa no encontrada.')
+            messages.error(request, ERROR_EMPRESA_NO_ENCONTRADA)
         except ValueError:
-            messages.error(request, 'Formato de fecha inválido.')
+            messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
     
     context = {
         'empresas': empresas,
@@ -286,9 +291,9 @@ def balance_general_view(request):
             reporte_data = reporte.generar()
             
         except Empresa.DoesNotExist:
-            messages.error(request, 'Empresa no encontrada.')
+            messages.error(request, ERROR_EMPRESA_NO_ENCONTRADA)
         except ValueError:
-            messages.error(request, 'Formato de fecha inválido.')
+            messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
     
     context = {
         'empresas': empresas,

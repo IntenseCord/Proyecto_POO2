@@ -8,6 +8,9 @@ from django.db import models
 from .models import Producto, Categoria, MovimientoInventario
 from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
 
+# Constantes para evitar duplicación
+DETALLE_PRODUCTO_URL = 'inventario:detalle_producto'
+
 @login_required
 def inventario_dashboard(request):
     """Dashboard principal del inventario"""
@@ -100,7 +103,7 @@ def crear_producto(request):
             producto.usuario_creador = request.user
             producto.save()
             messages.success(request, f'Producto "{producto.nombre}" creado exitosamente.')
-            return redirect('inventario:detalle_producto', producto_id=producto.id)
+            return redirect(DETALLE_PRODUCTO_URL, producto_id=producto.id)
     else:
         form = ProductoForm()
     
@@ -116,7 +119,7 @@ def editar_producto(request, producto_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
-            return redirect('inventario:detalle_producto', producto_id=producto.id)
+            return redirect(DETALLE_PRODUCTO_URL, producto_id=producto.id)
     else:
         form = ProductoForm(instance=producto)
     
@@ -169,7 +172,7 @@ def crear_movimiento(request, producto_id):
             movimiento.save()
             
             messages.success(request, f'Movimiento registrado exitosamente. Nueva cantidad: {producto.cantidad}')
-            return redirect('inventario:detalle_producto', producto_id=producto.id)
+            return redirect(DETALLE_PRODUCTO_URL, producto_id=producto.id)
     else:
         form = MovimientoInventarioForm()
     
