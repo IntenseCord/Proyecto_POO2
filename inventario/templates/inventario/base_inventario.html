@@ -31,6 +31,7 @@
 <div class="container-fluid">
   <!-- Breadcrumb -->
   <nav aria-label="breadcrumb" class="mb-4">
+    {% block breadcrumb %}
     <ol class="breadcrumb">
       <li class="breadcrumb-item">
         <a href="{% url 'dashboard:home' %}">Dashboard</a>
@@ -38,8 +39,8 @@
       <li class="breadcrumb-item">
         <a href="{% url 'inventario:dashboard' %}">Inventario</a>
       </li>
-      {% block breadcrumb %}{% endblock %}
     </ol>
+    {% endblock %}
   </nav>
 
   <!-- Título de la página -->

@@ -1,13 +1,21 @@
 {% extends 'inventario/base_inventario.html' %} {% block breadcrumb %}
-<li class="breadcrumb-item">
-  <a href="{% url 'inventario:lista_productos' %}">Productos</a>
-</li>
-<li class="breadcrumb-item">
-  <a href="{% url 'inventario:detalle_producto' producto.id %}"
-    >{{ producto.nombre }}</a
-  >
-</li>
-<li class="breadcrumb-item active">Editar</li>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="{% url 'dashboard:home' %}">Dashboard</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:dashboard' %}">Inventario</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:lista_productos' %}">Productos</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:detalle_producto' producto.id %}"
+      >{{ producto.nombre }}</a
+    >
+  </li>
+  <li class="breadcrumb-item active">Editar</li>
+</ol>
 {% endblock %} {% block page_title %}Editar Producto{% endblock %} {% block
 page_actions %}
 <nav class="btn-group" aria-label="Acciones del producto">

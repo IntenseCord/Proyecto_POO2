@@ -3,6 +3,9 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
+# Constante para evitar duplicación del literal
+CUENTA_MODEL = 'cuentas.cuenta'
+
 
 class Migration(migrations.Migration):
 
@@ -14,70 +17,70 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Activo',
             fields=[
-                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='cuentas.cuenta')),
+                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=CUENTA_MODEL)),
                 ('es_corriente', models.BooleanField(default=True, verbose_name='Es Corriente')),
             ],
             options={
                 'verbose_name': 'Activo',
                 'verbose_name_plural': 'Activos',
             },
-            bases=('cuentas.cuenta',),
+            bases=(CUENTA_MODEL,),
         ),
         migrations.CreateModel(
             name='Costo',
             fields=[
-                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='cuentas.cuenta')),
+                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=CUENTA_MODEL)),
             ],
             options={
                 'verbose_name': 'Costo',
                 'verbose_name_plural': 'Costos',
             },
-            bases=('cuentas.cuenta',),
+            bases=(CUENTA_MODEL,),
         ),
         migrations.CreateModel(
             name='Gasto',
             fields=[
-                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='cuentas.cuenta')),
+                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=CUENTA_MODEL)),
             ],
             options={
                 'verbose_name': 'Gasto',
                 'verbose_name_plural': 'Gastos',
             },
-            bases=('cuentas.cuenta',),
+            bases=(CUENTA_MODEL,),
         ),
         migrations.CreateModel(
             name='Ingreso',
             fields=[
-                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='cuentas.cuenta')),
+                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=CUENTA_MODEL)),
             ],
             options={
                 'verbose_name': 'Ingreso',
                 'verbose_name_plural': 'Ingresos',
             },
-            bases=('cuentas.cuenta',),
+            bases=(CUENTA_MODEL,),
         ),
         migrations.CreateModel(
             name='Pasivo',
             fields=[
-                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='cuentas.cuenta')),
+                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=CUENTA_MODEL)),
                 ('es_corriente', models.BooleanField(default=True, verbose_name='Es Corriente')),
             ],
             options={
                 'verbose_name': 'Pasivo',
                 'verbose_name_plural': 'Pasivos',
             },
-            bases=('cuentas.cuenta',),
+            bases=(CUENTA_MODEL,),
         ),
         migrations.CreateModel(
             name='Patrimonio',
             fields=[
-                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='cuentas.cuenta')),
+                ('cuenta_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=CUENTA_MODEL)),
             ],
             options={
                 'verbose_name': 'Patrimonio',
                 'verbose_name_plural': 'Patrimonios',
             },
-            bases=('cuentas.cuenta',),
+            bases=(CUENTA_MODEL,),
         ),
         migrations.RemoveField(
             model_name='cuenta',

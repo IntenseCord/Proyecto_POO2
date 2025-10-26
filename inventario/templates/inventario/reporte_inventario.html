@@ -1,5 +1,13 @@
 {% extends 'inventario/base_inventario.html' %} {% block breadcrumb %}
-<li class="breadcrumb-item active">Reporte de Inventario</li>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="{% url 'dashboard:home' %}">Dashboard</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:dashboard' %}">Inventario</a>
+  </li>
+  <li class="breadcrumb-item active">Reporte de Inventario</li>
+</ol>
 {% endblock %} {% block page_title %}Reporte de Inventario{% endblock %} {%
 block page_actions %}
 <nav class="btn-group" aria-label="Acciones del reporte">
