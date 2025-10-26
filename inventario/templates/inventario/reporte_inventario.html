@@ -244,9 +244,11 @@ block page_actions %}
         </tbody>
         <tfoot>
           <tr class="table-info">
-            <th colspan="6" class="text-right">TOTAL GENERAL:</th>
-            <th class="text-right">${{ valor_total|floatformat:2 }}</th>
-            <th></th>
+            <th scope="row" colspan="6" class="text-right">TOTAL GENERAL:</th>
+            <th scope="row" class="text-right">
+              ${{ valor_total|floatformat:2 }}
+            </th>
+            <th scope="row"></th>
           </tr>
         </tfoot>
       </table>
