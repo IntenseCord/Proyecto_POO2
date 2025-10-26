@@ -7,6 +7,7 @@ from django.db.models import Q, Sum, F
 from django.db import models
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
 from .models import Producto, Categoria, MovimientoInventario
 from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
 
@@ -253,9 +254,9 @@ def lista_categorias(request):
     categorias = Categoria.objects.all()
     return render(request, 'inventario/lista_categorias.html', {'categorias': categorias})
 
-# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @login_required
 @never_cache
+@csrf_protect
 @require_http_methods(['GET', 'POST'])
 def crear_categoria(request):
     """Crea una nueva categoría"""
