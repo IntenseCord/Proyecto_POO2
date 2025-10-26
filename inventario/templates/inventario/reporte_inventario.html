@@ -286,9 +286,9 @@ block page_actions %}
 
     // Limpiar elementos no deseados para Excel
     const badges = tabla.querySelectorAll(".badge");
-    badges.forEach((badge) => {
+    for (const badge of badges) {
       badge.outerHTML = badge.textContent;
-    });
+    }
 
     // Crear el contenido HTML para Excel
     const html = `
@@ -314,18 +314,18 @@ block page_actions %}
 
     // Crear y descargar el archivo
     const blob = new Blob([html], { type: "application/vnd.ms-excel" });
-    const url = window.URL.createObjectURL(blob);
+    const url = globalThis.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `inventario_${new Date().toISOString().split("T")[0]}.xls`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    globalThis.URL.revokeObjectURL(url);
   }
 
   // Mejorar la impresión
-  window.addEventListener("beforeprint", function () {
+  globalThis.addEventListener("beforeprint", function () {
     document.title = `Reporte_Inventario_${
       new Date().toISOString().split("T")[0]
     }`;

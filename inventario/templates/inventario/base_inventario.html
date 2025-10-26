@@ -1,92 +1,94 @@
-{% extends 'base.html' %}
-
-{% block title %}Inventario - S_CONTABLE{% endblock %}
-
+{% extends 'base.html' %} {% block title %}Inventario - S_CONTABLE{% endblock %}
 {% block extra_css %}
 <style>
-    .card-stats {
-        background: linear-gradient(45deg, #007bff, #0056b3);
-        color: white;
-    }
-    .card-stats .card-body {
-        padding: 1.5rem;
-    }
-    .stats-icon {
-        font-size: 2rem;
-        opacity: 0.8;
-    }
-    .alert-stock {
-        background-color: #fff3cd;
-        border-color: #ffeaa7;
-        color: #856404;
-    }
-    .badge-stock-bajo {
-        background-color: #dc3545;
-    }
-    .badge-stock-normal {
-        background-color: #28a745;
-    }
-    .table-hover tbody tr:hover {
-        background-color: rgba(0,123,255,.075);
-    }
+  .card-stats {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+  }
+  .card-stats .card-body {
+    padding: 1.5rem;
+  }
+  .stats-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+  }
+  .alert-stock {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+  }
+  .badge-stock-bajo {
+    background-color: #dc3545;
+  }
+  .badge-stock-normal {
+    background-color: #28a745;
+  }
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.075);
+  }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="container-fluid">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'inventario:dashboard' %}">Inventario</a></li>
-            {% block breadcrumb %}{% endblock %}
-        </ol>
-    </nav>
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'dashboard:home' %}">Dashboard</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'inventario:dashboard' %}">Inventario</a>
+      </li>
+      {% block breadcrumb %}{% endblock %}
+    </ol>
+  </nav>
 
-    <!-- Título de la página -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">{% block page_title %}Inventario{% endblock %}</h1>
-        <div>
-            {% block page_actions %}{% endblock %}
-        </div>
-    </div>
+  <!-- Título de la página -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{% block page_title %}Inventario{% endblock %}</h1>
+    <div>{% block page_actions %}{% endblock %}</div>
+  </div>
 
-    <!-- Mensajes -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+  <!-- Mensajes -->
+  {% if messages %} {% for message in messages %}
+  <div
+    class="alert alert-{{ message.tags }} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %} {% endif %}
 
-    <!-- Contenido principal -->
-    {% block inventario_content %}{% endblock %}
+  <!-- Contenido principal -->
+  {% block inventario_content %}{% endblock %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Auto-ocultar alertas después de 5 segundos (compatible con Bootstrap 5)
-        setTimeout(function () {
-            document.querySelectorAll('.alert').forEach(function (el) {
-                // Si usa .fade/.show de Bootstrap 5
-                el.classList.add('fade');
-                el.classList.remove('show');
-                el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
-            });
-        }, 5000);
+  document.addEventListener("DOMContentLoaded", function () {
+    // Auto-ocultar alertas después de 5 segundos (compatible con Bootstrap 5)
+    setTimeout(function () {
+      for (const el of document.querySelectorAll(".alert")) {
+        // Si usa .fade/.show de Bootstrap 5
+        el.classList.add("fade");
+        el.classList.remove("show");
+        el.addEventListener(
+          "transitionend",
+          function () {
+            el.remove();
+          },
+          { once: true }
+        );
+      }
+    }, 5000);
 
-        // Confirmación para eliminaciones
-        document.querySelectorAll('.btn-delete').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                if (!confirm('¿Está seguro de que desea eliminar este elemento?')) {
-                    e.preventDefault();
-                }
-            });
-        });
-    });
-    </script>
+    // Confirmación para eliminaciones
+    for (const btn of document.querySelectorAll(".btn-delete")) {
+      btn.addEventListener("click", function (e) {
+        if (!confirm("¿Está seguro de que desea eliminar este elemento?")) {
+          e.preventDefault();
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
