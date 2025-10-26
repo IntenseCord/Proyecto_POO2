@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from .models import Comprobante, DetalleComprobante, TipoComprobante
 from .forms import ComprobanteForm, DetalleComprobanteFormSet, FiltroComprobanteForm
 from empresa.models import Empresa
@@ -45,6 +46,7 @@ def _mostrar_mensaje_balanceo(request, comprobante):
         messages.warning(request, f'⚠️ Diferencia: ${diferencia:,.2f}')
 
 @login_required
+@require_GET
 def lista_comprobantes(request):
     """Lista todos los comprobantes con filtros"""
     comprobantes = Comprobante.objects.select_related('empresa', 'usuario_creador').all()
@@ -93,6 +95,7 @@ def lista_comprobantes(request):
     return render(request, 'transacciones/lista_comprobantes.html', context)
 
 @login_required
+@require_GET
 def detalle_comprobante(request, comprobante_id):
     """Muestra el detalle de un comprobante"""
     comprobante = get_object_or_404(
@@ -112,6 +115,8 @@ def detalle_comprobante(request, comprobante_id):
 
 @login_required
 @transaction.atomic
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def crear_comprobante(request):
     """Crea un nuevo comprobante con sus detalles"""
     if request.method == 'POST':
@@ -172,6 +177,8 @@ def crear_comprobante(request):
 
 @login_required
 @transaction.atomic
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def editar_comprobante(request, comprobante_id):
     """Edita un comprobante existente (solo si está en borrador)"""
     comprobante = get_object_or_404(Comprobante, id=comprobante_id)
@@ -211,6 +218,8 @@ def editar_comprobante(request, comprobante_id):
     return render(request, 'transacciones/crear_comprobante.html', context)
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def aprobar_comprobante(request, comprobante_id):
     """Aprueba un comprobante (valida partida doble)"""
     comprobante = get_object_or_404(Comprobante, id=comprobante_id)
@@ -231,6 +240,8 @@ def aprobar_comprobante(request, comprobante_id):
     return render(request, 'transacciones/confirmar_aprobacion.html', {'comprobante': comprobante})
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def anular_comprobante(request, comprobante_id):
     """Anula un comprobante aprobado"""
     comprobante = get_object_or_404(Comprobante, id=comprobante_id)
@@ -251,6 +262,8 @@ def anular_comprobante(request, comprobante_id):
     return render(request, 'transacciones/confirmar_anulacion.html', {'comprobante': comprobante})
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def eliminar_comprobante(request, comprobante_id):
     """Elimina un comprobante (solo si está en borrador)"""
     comprobante = get_object_or_404(Comprobante, id=comprobante_id)
@@ -273,6 +286,8 @@ def eliminar_comprobante(request, comprobante_id):
 # ============================================
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def crear_factura_venta(request):
     """
     Crea una factura de venta que automáticamente genera un asiento contable.
@@ -326,6 +341,8 @@ def crear_factura_venta(request):
 
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def crear_nota_credito(request):
     """
     Crea una nota de crédito que automáticamente genera un asiento contable.
@@ -378,6 +395,8 @@ def crear_nota_credito(request):
 
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def crear_recibo_caja(request):
     """
     Crea un recibo de caja que automáticamente genera un asiento contable.
@@ -420,6 +439,7 @@ def crear_recibo_caja(request):
 
 
 @login_required
+@require_GET
 def menu_documentos(request):
     """Menú principal de documentos contables"""
     return render(request, 'transacciones/documentos/menu.html')
