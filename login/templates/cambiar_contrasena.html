@@ -104,13 +104,15 @@
     function togglePassword(fieldId) {
         const field = document.getElementById(fieldId);
         const icon = document.getElementById(fieldId + '_icon');
+        const INPUT_TYPE_PASSWORD = 'password';
+        const INPUT_TYPE_TEXT = 'text';
         
-        if (field.type === 'password') {
-            field.type = 'text';
+        if (field.type === INPUT_TYPE_PASSWORD) {
+            field.type = INPUT_TYPE_TEXT;
             icon.classList.remove('fa-eye');
             icon.classList.add('fa-eye-slash');
         } else {
-            field.type = 'password';
+            field.type = INPUT_TYPE_PASSWORD;
             icon.classList.remove('fa-eye-slash');
             icon.classList.add('fa-eye');
         }

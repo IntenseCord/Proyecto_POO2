@@ -411,7 +411,7 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
 </div>
 {% endif %}
 
-<!-- Productos con Bajo Stock (Visible para todos) -->
+<!-- Productos visibles-->
 <div class="grid-2">
   <div class="chart-container">
     <div class="chart-header">
@@ -495,7 +495,7 @@ endblock %} {% block page_title %}Dashboard{% endblock %} {% block extra_css %}
   </div>
 </div>
 {% endblock %} {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-qMbf16KOR+VfmVchEKf/tSDfRnFvGqQDvjvVkwEKCh4VQVL6vvXpCaVvVjTnCqNu" crossorigin="anonymous"></script>
 <script>
   {% if es_admin %}
   // Gráfico de Comprobantes por Tipo
