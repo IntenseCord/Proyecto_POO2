@@ -5,7 +5,7 @@ from decimal import Decimal
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
-    descripcion = models.TextField(blank=True, null=True)
+    descripcion = models.TextField(blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -25,7 +25,7 @@ class Producto(models.Model):
     
     codigo = models.CharField(max_length=50, unique=True, help_text="Código único del producto")
     nombre = models.CharField(max_length=200)
-    descripcion = models.TextField(blank=True, null=True)
+    descripcion = models.TextField(blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     cantidad = models.IntegerField(
         default=0,
@@ -87,7 +87,7 @@ class MovimientoInventario(models.Model):
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
     cantidad = models.IntegerField()
     motivo = models.CharField(max_length=200)
-    observaciones = models.TextField(blank=True, null=True)
+    observaciones = models.TextField(blank=True)
     fecha = models.DateTimeField(auto_now_add=True)
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     

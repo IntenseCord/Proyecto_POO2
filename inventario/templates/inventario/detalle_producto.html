@@ -1,222 +1,253 @@
-{% extends 'inventario/base_inventario.html' %}
-
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'inventario:lista_productos' %}">Productos</a></li>
+{% extends 'inventario/base_inventario.html' %} {% block breadcrumb %}
+<li class="breadcrumb-item">
+  <a href="{% url 'inventario:lista_productos' %}">Productos</a>
+</li>
 <li class="breadcrumb-item active">{{ producto.nombre }}</li>
-{% endblock %}
-
-{% block page_title %}{{ producto.nombre }}{% endblock %}
-
-{% block page_actions %}
-<div class="btn-group" role="group">
-    <a href="{% url 'inventario:editar_producto' producto.id %}" class="btn btn-primary">
-        <i class="fas fa-edit"></i> Editar
-    </a>
-    <a href="{% url 'inventario:crear_movimiento' producto.id %}" class="btn btn-success">
-        <i class="fas fa-exchange-alt"></i> Movimiento
-    </a>
-    <a href="{% url 'inventario:lista_productos' %}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Volver
-    </a>
-</div>
-{% endblock %}
-
-{% block inventario_content %}
+{% endblock %} {% block page_title %}{{ producto.nombre }}{% endblock %} {%
+block page_actions %}
+<nav class="btn-group" aria-label="Acciones del producto">
+  <a
+    href="{% url 'inventario:editar_producto' producto.id %}"
+    class="btn btn-primary"
+  >
+    <i class="fas fa-edit"></i> Editar
+  </a>
+  <a
+    href="{% url 'inventario:crear_movimiento' producto.id %}"
+    class="btn btn-success"
+  >
+    <i class="fas fa-exchange-alt"></i> Movimiento
+  </a>
+  <a
+    href="{% url 'inventario:lista_productos' %}"
+    class="btn btn-outline-secondary"
+  >
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</nav>
+{% endblock %} {% block inventario_content %}
 <div class="row">
-    <!-- Información del Producto -->
-    <div class="col-lg-8">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-info-circle"></i> Información del Producto
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Código</label>
-                        <p class="h5">{{ producto.codigo }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Estado</label>
-                        <p>
-                            {% if producto.estado == 'activo' %}
-                                <span class="badge badge-success">Activo</span>
-                            {% elif producto.estado == 'inactivo' %}
-                                <span class="badge badge-secondary">Inactivo</span>
-                            {% else %}
-                                <span class="badge badge-warning">Descontinuado</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Categoría</label>
-                        <p class="h6">
-                            {% if producto.categoria %}
-                                <span class="badge badge-secondary">{{ producto.categoria.nombre }}</span>
-                            {% else %}
-                                <span class="text-muted">Sin categoría</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Precio Unitario</label>
-                        <p class="h5 text-success">${{ producto.precio_unitario|floatformat:2 }}</p>
-                    </div>
-                </div>
-
-                {% if producto.descripcion %}
-                <div class="mb-3">
-                    <label class="form-label text-muted">Descripción</label>
-                    <p>{{ producto.descripcion }}</p>
-                </div>
-                {% endif %}
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Fecha de Creación</label>
-                        <p>{{ producto.fecha_creacion|date:"d/m/Y H:i" }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Última Actualización</label>
-                        <p>{{ producto.fecha_actualizacion|date:"d/m/Y H:i" }}</p>
-                    </div>
-                </div>
-
-                {% if producto.usuario_creador %}
-                <div class="mb-3">
-                    <label class="form-label text-muted">Creado por</label>
-                    <p>{{ producto.usuario_creador.get_full_name|default:producto.usuario_creador.username }}</p>
-                </div>
-                {% endif %}
-            </div>
+  <!-- Información del Producto -->
+  <div class="col-lg-8">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-info-circle"></i> Información del Producto
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="form-label text-muted">Código</div>
+            <p class="h5">{{ producto.codigo }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-label text-muted">Estado</div>
+            <p>
+              {% if producto.estado == 'activo' %}
+              <span class="badge badge-success">Activo</span>
+              {% elif producto.estado == 'inactivo' %}
+              <span class="badge badge-secondary">Inactivo</span>
+              {% else %}
+              <span class="badge badge-warning">Descontinuado</span>
+              {% endif %}
+            </p>
+          </div>
         </div>
-    </div>
 
-    <!-- Estadísticas del Inventario -->
-    <div class="col-lg-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-chart-bar"></i> Estadísticas de Inventario
-                </h6>
-            </div>
-            <div class="card-body text-center">
-                <div class="mb-4">
-                    <h3 class="{% if producto.necesita_restock %}text-danger{% else %}text-success{% endif %}">
-                        {{ producto.cantidad }}
-                    </h3>
-                    <p class="text-muted mb-0">Cantidad en Stock</p>
-                    {% if producto.necesita_restock %}
-                        <small class="text-danger">
-                            <i class="fas fa-exclamation-triangle"></i> Stock bajo
-                        </small>
-                    {% endif %}
-                </div>
-
-                <div class="mb-4">
-                    <h4 class="text-warning">{{ producto.stock_minimo }}</h4>
-                    <p class="text-muted mb-0">Stock Mínimo</p>
-                </div>
-
-                <div class="mb-4">
-                    <h4 class="text-info">${{ producto.valor_total|floatformat:2 }}</h4>
-                    <p class="text-muted mb-0">Valor Total en Inventario</p>
-                </div>
-
-                <div class="d-grid gap-2">
-                    <a href="{% url 'inventario:crear_movimiento' producto.id %}" class="btn btn-success">
-                        <i class="fas fa-plus"></i> Agregar Stock
-                    </a>
-                    <a href="{% url 'inventario:editar_producto' producto.id %}" class="btn btn-outline-primary">
-                        <i class="fas fa-edit"></i> Editar Producto
-                    </a>
-                </div>
-            </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="form-label text-muted">Categoría</div>
+            <p class="h6">
+              {% if producto.categoria %}
+              <span class="badge badge-secondary"
+                >{{ producto.categoria.nombre }}</span
+              >
+              {% else %}
+              <span class="text-muted">Sin categoría</span>
+              {% endif %}
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-label text-muted">Precio Unitario</div>
+            <p class="h5 text-success">
+              ${{ producto.precio_unitario|floatformat:2 }}
+            </p>
+          </div>
         </div>
+
+        {% if producto.descripcion %}
+        <div class="mb-3">
+          <div class="form-label text-muted">Descripción</div>
+          <p>{{ producto.descripcion }}</p>
+        </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <div class="form-label text-muted">Fecha de Creación</div>
+            <p>{{ producto.fecha_creacion|date:"d/m/Y H:i" }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="form-label text-muted">Última Actualización</div>
+            <p>{{ producto.fecha_actualizacion|date:"d/m/Y H:i" }}</p>
+          </div>
+        </div>
+
+        {% if producto.usuario_creador %}
+        <div class="mb-3">
+          <div class="form-label text-muted">Creado por</div>
+          <p>
+            {{
+            producto.usuario_creador.get_full_name|default:producto.usuario_creador.username
+            }}
+          </p>
+        </div>
+        {% endif %}
+      </div>
     </div>
+  </div>
+
+  <!-- Estadísticas del Inventario -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-chart-bar"></i> Estadísticas de Inventario
+        </h6>
+      </div>
+      <div class="card-body text-center">
+        <div class="mb-4">
+          <h3
+            class="{% if producto.necesita_restock %}text-danger{% else %}text-success{% endif %}"
+          >
+            {{ producto.cantidad }}
+          </h3>
+          <p class="text-muted mb-0">Cantidad en Stock</p>
+          {% if producto.necesita_restock %}
+          <small class="text-danger">
+            <i class="fas fa-exclamation-triangle"></i> Stock bajo
+          </small>
+          {% endif %}
+        </div>
+
+        <div class="mb-4">
+          <h4 class="text-warning">{{ producto.stock_minimo }}</h4>
+          <p class="text-muted mb-0">Stock Mínimo</p>
+        </div>
+
+        <div class="mb-4">
+          <h4 class="text-info">${{ producto.valor_total|floatformat:2 }}</h4>
+          <p class="text-muted mb-0">Valor Total en Inventario</p>
+        </div>
+
+        <div class="d-grid gap-2">
+          <a
+            href="{% url 'inventario:crear_movimiento' producto.id %}"
+            class="btn btn-success"
+          >
+            <i class="fas fa-plus"></i> Agregar Stock
+          </a>
+          <a
+            href="{% url 'inventario:editar_producto' producto.id %}"
+            class="btn btn-outline-primary"
+          >
+            <i class="fas fa-edit"></i> Editar Producto
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Historial de Movimientos -->
 <div class="card shadow">
-    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">
-            <i class="fas fa-history"></i> Historial de Movimientos
-        </h6>
-        <a href="{% url 'inventario:crear_movimiento' producto.id %}" class="btn btn-sm btn-success">
-            <i class="fas fa-plus"></i> Nuevo Movimiento
-        </a>
+  <div
+    class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+  >
+    <h6 class="m-0 font-weight-bold text-primary">
+      <i class="fas fa-history"></i> Historial de Movimientos
+    </h6>
+    <a
+      href="{% url 'inventario:crear_movimiento' producto.id %}"
+      class="btn btn-sm btn-success"
+    >
+      <i class="fas fa-plus"></i> Nuevo Movimiento
+    </a>
+  </div>
+  <div class="card-body">
+    {% if movimientos %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Motivo</th>
+            <th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for movimiento in movimientos %}
+          <tr>
+            <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if movimiento.tipo == 'entrada' %}
+              <span class="badge badge-success">
+                <i class="fas fa-arrow-up"></i> Entrada
+              </span>
+              {% elif movimiento.tipo == 'salida' %}
+              <span class="badge badge-danger">
+                <i class="fas fa-arrow-down"></i> Salida
+              </span>
+              {% else %}
+              <span class="badge badge-warning">
+                <i class="fas fa-edit"></i> Ajuste
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              <strong>
+                {% if movimiento.tipo == 'salida' %}-{% elif movimiento.tipo ==
+                'entrada' %}+{% endif %}{{ movimiento.cantidad }}
+              </strong>
+            </td>
+            <td>{{ movimiento.motivo }}</td>
+            <td>
+              {% if movimiento.usuario %} {{
+              movimiento.usuario.get_full_name|default:movimiento.usuario.username
+              }} {% else %}
+              <span class="text-muted">Sistema</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    <div class="card-body">
-        {% if movimientos %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Tipo</th>
-                            <th>Cantidad</th>
-                            <th>Motivo</th>
-                            <th>Usuario</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for movimiento in movimientos %}
-                        <tr>
-                            <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
-                            <td>
-                                {% if movimiento.tipo == 'entrada' %}
-                                    <span class="badge badge-success">
-                                        <i class="fas fa-arrow-up"></i> Entrada
-                                    </span>
-                                {% elif movimiento.tipo == 'salida' %}
-                                    <span class="badge badge-danger">
-                                        <i class="fas fa-arrow-down"></i> Salida
-                                    </span>
-                                {% else %}
-                                    <span class="badge badge-warning">
-                                        <i class="fas fa-edit"></i> Ajuste
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <strong>
-                                    {% if movimiento.tipo == 'salida' %}-{% elif movimiento.tipo == 'entrada' %}+{% endif %}{{ movimiento.cantidad }}
-                                </strong>
-                            </td>
-                            <td>{{ movimiento.motivo }}</td>
-                            <td>
-                                {% if movimiento.usuario %}
-                                    {{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}
-                                {% else %}
-                                    <span class="text-muted">Sistema</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            {% if producto.movimientos.count > 10 %}
-                <div class="text-center mt-3">
-                    <p class="text-muted">
-                        Mostrando los últimos 10 movimientos de {{ producto.movimientos.count }} totales.
-                    </p>
-                </div>
-            {% endif %}
-        {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No hay movimientos registrados para este producto.</p>
-                <a href="{% url 'inventario:crear_movimiento' producto.id %}" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Crear Primer Movimiento
-                </a>
-            </div>
-        {% endif %}
+
+    {% if producto.movimientos.count > 10 %}
+    <div class="text-center mt-3">
+      <p class="text-muted">
+        Mostrando los últimos 10 movimientos de {{ producto.movimientos.count }}
+        totales.
+      </p>
     </div>
+    {% endif %} {% else %}
+    <div class="text-center py-4">
+      <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+      <p class="text-muted">
+        No hay movimientos registrados para este producto.
+      </p>
+      <a
+        href="{% url 'inventario:crear_movimiento' producto.id %}"
+        class="btn btn-success"
+      >
+        <i class="fas fa-plus"></i> Crear Primer Movimiento
+      </a>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
