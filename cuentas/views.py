@@ -157,12 +157,12 @@ def eliminar_cuenta(request, cuenta_id):
     # Verificar si tiene movimientos
     if cuenta.movimientos.exists():
         messages.error(request, 'No se puede desactivar una cuenta con movimientos registrados.')
-        return redirect('cuentas:detalle_cuenta', cuenta_id=cuenta.id)
+        return redirect(DETALLE_CUENTA_URL, cuenta_id=cuenta.id)
     
     # Verificar si tiene subcuentas activas
     if cuenta.subcuentas.filter(esta_activa=True).exists():
         messages.error(request, 'No se puede desactivar una cuenta con subcuentas activas.')
-        return redirect('cuentas:detalle_cuenta', cuenta_id=cuenta.id)
+        return redirect(DETALLE_CUENTA_URL, cuenta_id=cuenta.id)
     
     if request.method == 'POST':
         cuenta.esta_activa = False

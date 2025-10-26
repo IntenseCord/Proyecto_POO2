@@ -9,6 +9,41 @@ from .models import Comprobante, DetalleComprobante, TipoComprobante
 from .forms import ComprobanteForm, DetalleComprobanteFormSet, FiltroComprobanteForm
 from empresa.models import Empresa
 
+# Constantes para evitar duplicación
+DETALLE_COMPROBANTE_URL = 'transacciones:detalle_comprobante'
+MAX_ITEMS_PER_DOCUMENT = 100  # Límite máximo de items por seguridad
+
+
+def _procesar_detalles_formset(formset):
+    """
+    Procesa y guarda los detalles del formset.
+    Extrae lógica para reducir complejidad cognitiva.
+    """
+    # Guardar detalles
+    detalles = formset.save(commit=False)
+    
+    # Eliminar detalles marcados para borrar
+    for detalle in formset.deleted_objects:
+        detalle.delete()
+    
+    # Guardar y validar detalles
+    for i, detalle in enumerate(detalles, start=1):
+        detalle.orden = i
+        detalle.full_clean()
+        detalle.save()
+
+
+def _mostrar_mensaje_balanceo(request, comprobante):
+    """
+    Muestra mensaje sobre el estado de balanceo del comprobante.
+    Extrae lógica para reducir complejidad cognitiva.
+    """
+    if comprobante.esta_balanceado():
+        messages.info(request, '✅ El comprobante está balanceado.')
+    else:
+        diferencia = abs(comprobante.total_debito - comprobante.total_credito)
+        messages.warning(request, f'⚠️ Diferencia: ${diferencia:,.2f}')
+
 @login_required
 def lista_comprobantes(request):
     """Lista todos los comprobantes con filtros"""
@@ -119,7 +154,7 @@ def crear_comprobante(request):
                         f'Diferencia: ${abs(comprobante.total_debito - comprobante.total_credito):,.2f}'
                     )
                 
-                return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+                return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
                 
             except ValidationError as e:
                 messages.error(request, f'Error de validación: {e}')
@@ -143,7 +178,7 @@ def editar_comprobante(request, comprobante_id):
     
     if comprobante.estado != 'BORRADOR':
         messages.error(request, 'Solo se pueden editar comprobantes en estado BORRADOR.')
-        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
     if request.method == 'POST':
         form = ComprobanteForm(request.POST, instance=comprobante)
@@ -152,34 +187,13 @@ def editar_comprobante(request, comprobante_id):
         if form.is_valid() and formset.is_valid():
             try:
                 form.save()
-                
-                # Guardar detalles
-                detalles = formset.save(commit=False)
-                
-                # Eliminar detalles marcados para borrar
-                for detalle in formset.deleted_objects:
-                    detalle.delete()
-                
-                # Guardar y validar detalles
-                for i, detalle in enumerate(detalles, start=1):
-                    detalle.orden = i
-                    detalle.full_clean()
-                    detalle.save()
-                
-                # Recalcular totales
+                _procesar_detalles_formset(formset)
                 comprobante.calcular_totales()
                 
                 messages.success(request, f'Comprobante "{comprobante.numero}" actualizado exitosamente.')
+                _mostrar_mensaje_balanceo(request, comprobante)
                 
-                if comprobante.esta_balanceado():
-                    messages.info(request, '✅ El comprobante está balanceado.')
-                else:
-                    messages.warning(
-                        request,
-                        f'⚠️ Diferencia: ${abs(comprobante.total_debito - comprobante.total_credito):,.2f}'
-                    )
-                
-                return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+                return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
                 
             except ValidationError as e:
                 messages.error(request, f'Error de validación: {e}')
@@ -203,7 +217,7 @@ def aprobar_comprobante(request, comprobante_id):
     
     if comprobante.estado != 'BORRADOR':
         messages.error(request, 'Solo se pueden aprobar comprobantes en estado BORRADOR.')
-        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
     if request.method == 'POST':
         try:
@@ -212,7 +226,7 @@ def aprobar_comprobante(request, comprobante_id):
         except ValidationError as e:
             messages.error(request, f'❌ Error al aprobar: {e}')
         
-        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
     return render(request, 'transacciones/confirmar_aprobacion.html', {'comprobante': comprobante})
 
@@ -223,7 +237,7 @@ def anular_comprobante(request, comprobante_id):
     
     if comprobante.estado == 'ANULADO':
         messages.error(request, 'El comprobante ya está anulado.')
-        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
     if request.method == 'POST':
         try:
@@ -232,7 +246,7 @@ def anular_comprobante(request, comprobante_id):
         except ValidationError as e:
             messages.error(request, f'Error al anular: {e}')
         
-        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
     return render(request, 'transacciones/confirmar_anulacion.html', {'comprobante': comprobante})
 
@@ -243,7 +257,7 @@ def eliminar_comprobante(request, comprobante_id):
     
     if comprobante.estado != 'BORRADOR':
         messages.error(request, 'Solo se pueden eliminar comprobantes en estado BORRADOR.')
-        return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
     if request.method == 'POST':
         numero = comprobante.numero
@@ -283,8 +297,10 @@ def crear_factura_venta(request):
                 forma_pago=request.POST.get('forma_pago', 'CREDITO')
             )
             
-            # Agregar items
+            # Agregar items con validación de seguridad
             items_count = int(request.POST.get('items_count', 0))
+            # Limitar el número de items para prevenir ataques de inyección
+            items_count = min(items_count, MAX_ITEMS_PER_DOCUMENT)
             for i in range(items_count):
                 descripcion = request.POST.get(f'item_descripcion_{i}')
                 cantidad = Decimal(request.POST.get(f'item_cantidad_{i}', 0))
@@ -297,7 +313,7 @@ def crear_factura_venta(request):
             comprobante = factura.generar_asiento()
             
             messages.success(request, f'Factura creada exitosamente. Comprobante #{comprobante.numero}')
-            return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+            return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
             
         except Exception as e:
             messages.error(request, f'Error al crear la factura: {str(e)}')
@@ -333,8 +349,10 @@ def crear_nota_credito(request):
                 cliente=request.POST.get('cliente')
             )
             
-            # Agregar items
+            # Agregar items con validación de seguridad
             items_count = int(request.POST.get('items_count', 0))
+            # Limitar el número de items para prevenir ataques de inyección
+            items_count = min(items_count, MAX_ITEMS_PER_DOCUMENT)
             for i in range(items_count):
                 descripcion = request.POST.get(f'item_descripcion_{i}')
                 cantidad = Decimal(request.POST.get(f'item_cantidad_{i}', 0))
@@ -347,7 +365,7 @@ def crear_nota_credito(request):
             comprobante = nota.generar_asiento()
             
             messages.success(request, f'Nota de Crédito creada exitosamente. Comprobante #{comprobante.numero}')
-            return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+            return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
             
         except Exception as e:
             messages.error(request, f'Error al crear la nota de crédito: {str(e)}')
@@ -389,7 +407,7 @@ def crear_recibo_caja(request):
             comprobante = recibo.generar_asiento()
             
             messages.success(request, f'Recibo de Caja creado exitosamente. Comprobante #{comprobante.numero}')
-            return redirect('transacciones:detalle_comprobante', comprobante_id=comprobante.id)
+            return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
             
         except Exception as e:
             messages.error(request, f'Error al crear el recibo: {str(e)}')

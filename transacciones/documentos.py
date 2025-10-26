@@ -11,6 +11,9 @@ from empresa.models import Empresa
 from cuentas.models import Cuenta
 from .models import Comprobante, DetalleComprobante
 
+# Constantes para evitar duplicación
+ERROR_CUENTAS_NO_ENCONTRADAS = "No se encontraron las cuentas contables necesarias"
+
 
 class DocumentoContable(ABC):
     """
@@ -174,7 +177,7 @@ class FacturaVenta(DocumentoContable):
         ).first()
         
         if not cuentas['debito'] or not cuentas['credito']:
-            raise ValueError("No se encontraron las cuentas contables necesarias")
+            raise ValueError(ERROR_CUENTAS_NO_ENCONTRADAS)
         
         return cuentas
     
@@ -258,7 +261,7 @@ class NotaCredito(DocumentoContable):
         ).first()
         
         if not cuentas['debito'] or not cuentas['credito']:
-            raise ValueError("No se encontraron las cuentas contables necesarias")
+            raise ValueError(ERROR_CUENTAS_NO_ENCONTRADAS)
         
         return cuentas
     
@@ -349,7 +352,7 @@ class FacturaCompra(DocumentoContable):
             ).first()
         
         if not cuentas['debito'] or not cuentas['credito']:
-            raise ValueError("No se encontraron las cuentas contables necesarias")
+            raise ValueError(ERROR_CUENTAS_NO_ENCONTRADAS)
         
         return cuentas
     
@@ -441,7 +444,7 @@ class ReciboCaja(DocumentoContable):
         ).first()
         
         if not cuentas['debito'] or not cuentas['credito']:
-            raise ValueError("No se encontraron las cuentas contables necesarias")
+            raise ValueError(ERROR_CUENTAS_NO_ENCONTRADAS)
         
         return cuentas
     
