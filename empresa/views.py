@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from .models import Empresa
 from .forms import EmpresaForm
 
@@ -10,6 +11,7 @@ from .forms import EmpresaForm
 DETALLE_EMPRESA_URL = 'empresa:detalle_empresa'
 
 @login_required
+@require_GET
 def lista_empresas(request):
     """Lista todas las empresas con filtros y paginación"""
     empresas = Empresa.objects.all().order_by('-fecha_creacion')
@@ -45,6 +47,7 @@ def lista_empresas(request):
     return render(request, 'empresa/lista_empresas.html', context)
 
 @login_required
+@require_GET
 def detalle_empresa(request, empresa_id):
     """Muestra el detalle de una empresa"""
     empresa = get_object_or_404(Empresa, id=empresa_id)
@@ -62,6 +65,8 @@ def detalle_empresa(request, empresa_id):
     return render(request, 'empresa/detalle_empresa.html', context)
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def crear_empresa(request):
     """Crea una nueva empresa"""
     if request.method == 'POST':
@@ -78,6 +83,8 @@ def crear_empresa(request):
     return render(request, 'empresa/crear_empresa.html', {'form': form})
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def editar_empresa(request, empresa_id):
     """Edita una empresa existente"""
     empresa = get_object_or_404(Empresa, id=empresa_id)
@@ -97,6 +104,8 @@ def editar_empresa(request, empresa_id):
     })
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
+@require_http_methods(['GET', 'POST'])
 def eliminar_empresa(request, empresa_id):
     """Desactiva una empresa (no la elimina físicamente)"""
     empresa = get_object_or_404(Empresa, id=empresa_id)
@@ -110,6 +119,7 @@ def eliminar_empresa(request, empresa_id):
     return render(request, 'empresa/confirmar_eliminacion.html', {'empresa': empresa})
 
 @login_required
+@require_POST
 def activar_empresa(request, empresa_id):
     """Reactiva una empresa desactivada"""
     empresa = get_object_or_404(Empresa, id=empresa_id)

@@ -109,6 +109,7 @@ def detalle_cuenta(request, cuenta_id):
     return render(request, 'cuentas/detalle_cuenta.html', context)
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def crear_cuenta(request):
     """Crea una nueva cuenta"""
@@ -130,6 +131,7 @@ def crear_cuenta(request):
     return render(request, 'cuentas/crear_cuenta.html', {'form': form})
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def editar_cuenta(request, cuenta_id):
     """Edita una cuenta existente"""
@@ -156,6 +158,7 @@ def editar_cuenta(request, cuenta_id):
     })
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def eliminar_cuenta(request, cuenta_id):
     """Desactiva una cuenta (no la elimina físicamente)"""

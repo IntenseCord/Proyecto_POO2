@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET
 from django.db.models import Sum, Count, F, DecimalField, ExpressionWrapper
 from empresa.models import Empresa
 from cuentas.models import Cuenta
@@ -13,6 +14,7 @@ from decimal import Decimal
 
 @login_required
 @never_cache
+@require_GET
 def dashboard_view(request):
     """Vista principal del dashboard con estadísticas personalizadas según el usuario"""
     

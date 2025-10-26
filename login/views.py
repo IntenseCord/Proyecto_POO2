@@ -30,6 +30,7 @@ def landing_view(request):
         return redirect(DASHBOARD_HOME)
     return render(request, 'landing.html')
 
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def login_view(request):
     """Vista para el login de usuarios"""
@@ -60,6 +61,7 @@ def login_view(request):
     
     
 
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def registro_view(request):
     """Vista para el registro de nuevos usuarios"""
@@ -187,6 +189,7 @@ def verificar_email_view(request, token):
         messages.error(request, 'Token de verificación inválido.')
         return redirect(LOGIN_ROUTE_NAME)
 
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def solicitar_recuperacion_view(request):
     """Vista para solicitar recuperación de contraseña"""
@@ -222,6 +225,7 @@ def solicitar_recuperacion_view(request):
     
     return render(request, 'solicitar_recuperacion.html')
 
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def restablecer_contrasena_view(request, token):
     """Vista para restablecer contraseña con token"""
@@ -319,6 +323,7 @@ def logout_view(request):
 
 @login_required
 @never_cache
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def perfil_view(request):
     """Vista para ver y editar el perfil del usuario"""
@@ -353,6 +358,7 @@ def perfil_view(request):
 
 @login_required
 @never_cache
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def cambiar_contrasena_view(request):
     """Vista para cambiar la contraseña del usuario"""

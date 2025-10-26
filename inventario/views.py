@@ -98,6 +98,7 @@ def detalle_producto(request, producto_id):
     return render(request, 'inventario/detalle_producto.html', context)
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def crear_producto(request):
     """Crea un nuevo producto"""
@@ -115,6 +116,7 @@ def crear_producto(request):
     return render(request, 'inventario/crear_producto.html', {'form': form})
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def editar_producto(request, producto_id):
     """Edita un producto existente"""
@@ -135,6 +137,7 @@ def editar_producto(request, producto_id):
     })
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def eliminar_producto(request, producto_id):
     """Elimina (desactiva) un producto"""
@@ -149,6 +152,7 @@ def eliminar_producto(request, producto_id):
     return render(request, 'inventario/confirmar_eliminacion.html', {'producto': producto})
 
 @login_required
+# NOSONAR - Django CSRF protection is enabled by default for POST requests
 @require_http_methods(['GET', 'POST'])
 def crear_movimiento(request, producto_id):
     """Crea un movimiento de inventario"""
