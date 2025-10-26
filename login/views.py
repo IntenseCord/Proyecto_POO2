@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
@@ -22,12 +23,14 @@ CAMBIAR_CONTRASENA_TEMPLATE = 'cambiar_contrasena.html'
 # Mensajes de error comunes
 ERROR_CLAVE_CORTA = 'La contraseña debe tener al menos 6 caracteres'
 
+@require_GET
 def landing_view(request):
     """Vista para la página de bienvenida"""
     if request.user.is_authenticated:
         return redirect(DASHBOARD_HOME)
     return render(request, 'landing.html')
 
+@require_http_methods(['GET', 'POST'])
 def login_view(request):
     """Vista para el login de usuarios"""
     if request.user.is_authenticated:
@@ -57,6 +60,7 @@ def login_view(request):
     
     
 
+@require_http_methods(['GET', 'POST'])
 def registro_view(request):
     """Vista para el registro de nuevos usuarios"""
     if request.user.is_authenticated:
@@ -157,6 +161,7 @@ Equipo de Sistema Contable
     except Exception as e:
         logger.error(f"Error al enviar email de verificación a {user.email}: {e}")
 
+@require_GET
 def verificar_email_view(request, token):
     """Vista para verificar el email del usuario"""
     try:
@@ -182,6 +187,7 @@ def verificar_email_view(request, token):
         messages.error(request, 'Token de verificación inválido.')
         return redirect(LOGIN_ROUTE_NAME)
 
+@require_http_methods(['GET', 'POST'])
 def solicitar_recuperacion_view(request):
     """Vista para solicitar recuperación de contraseña"""
     if request.user.is_authenticated:
@@ -216,6 +222,7 @@ def solicitar_recuperacion_view(request):
     
     return render(request, 'solicitar_recuperacion.html')
 
+@require_http_methods(['GET', 'POST'])
 def restablecer_contrasena_view(request, token):
     """Vista para restablecer contraseña con token"""
     try:
@@ -303,6 +310,7 @@ Equipo de Sistema Contable
     except Exception as e:
         logger.error(f"Error al enviar email de recuperación a {user.email}: {e}")
 
+@require_POST
 def logout_view(request):
     """Vista para cerrar sesión"""
     logout(request)
@@ -311,6 +319,7 @@ def logout_view(request):
 
 @login_required
 @never_cache
+@require_http_methods(['GET', 'POST'])
 def perfil_view(request):
     """Vista para ver y editar el perfil del usuario"""
     # Asegurar que el usuario tenga un perfil
@@ -344,6 +353,7 @@ def perfil_view(request):
 
 @login_required
 @never_cache
+@require_http_methods(['GET', 'POST'])
 def cambiar_contrasena_view(request):
     """Vista para cambiar la contraseña del usuario"""
     if request.method == 'POST':

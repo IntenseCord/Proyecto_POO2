@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.db import models
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from .models import Producto, Categoria, MovimientoInventario
 from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
 
@@ -12,6 +13,7 @@ from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
 DETALLE_PRODUCTO_URL = 'inventario:detalle_producto'
 
 @login_required
+@require_GET
 def inventario_dashboard(request):
     """Dashboard principal del inventario"""
     productos = Producto.objects.filter(estado='activo')
@@ -40,6 +42,7 @@ def inventario_dashboard(request):
     return render(request, 'inventario/dashboard.html', context)
 
 @login_required
+@require_GET
 def lista_productos(request):
     """Lista todos los productos con filtros y paginación"""
     productos = Producto.objects.all()
@@ -81,6 +84,7 @@ def lista_productos(request):
     return render(request, 'inventario/lista_productos.html', context)
 
 @login_required
+@require_GET
 def detalle_producto(request, producto_id):
     """Muestra el detalle de un producto"""
     producto = get_object_or_404(Producto, id=producto_id)
@@ -94,6 +98,7 @@ def detalle_producto(request, producto_id):
     return render(request, 'inventario/detalle_producto.html', context)
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def crear_producto(request):
     """Crea un nuevo producto"""
     if request.method == 'POST':
@@ -110,6 +115,7 @@ def crear_producto(request):
     return render(request, 'inventario/crear_producto.html', {'form': form})
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def editar_producto(request, producto_id):
     """Edita un producto existente"""
     producto = get_object_or_404(Producto, id=producto_id)
@@ -129,6 +135,7 @@ def editar_producto(request, producto_id):
     })
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def eliminar_producto(request, producto_id):
     """Elimina (desactiva) un producto"""
     producto = get_object_or_404(Producto, id=producto_id)
@@ -142,6 +149,7 @@ def eliminar_producto(request, producto_id):
     return render(request, 'inventario/confirmar_eliminacion.html', {'producto': producto})
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def crear_movimiento(request, producto_id):
     """Crea un movimiento de inventario"""
     producto = get_object_or_404(Producto, id=producto_id)
@@ -182,12 +190,14 @@ def crear_movimiento(request, producto_id):
     })
 
 @login_required
+@require_GET
 def lista_categorias(request):
     """Lista todas las categorías"""
     categorias = Categoria.objects.all()
     return render(request, 'inventario/lista_categorias.html', {'categorias': categorias})
 
 @login_required
+@require_POST
 def crear_categoria(request):
     """Crea una nueva categoría"""
     if request.method == 'POST':
@@ -202,6 +212,7 @@ def crear_categoria(request):
     return render(request, 'inventario/crear_categoria.html', {'form': form})
 
 @login_required
+@require_GET
 def reporte_inventario(request):
     """Genera reporte de inventario"""
     productos = Producto.objects.filter(estado='activo')

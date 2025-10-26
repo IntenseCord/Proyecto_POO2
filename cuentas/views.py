@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 from .models import Cuenta, TipoCuenta
 from .forms import CuentaForm, FiltroCuentaForm
 from empresa.models import Empresa
@@ -13,6 +14,7 @@ ERROR_EMPRESA_NO_ENCONTRADA = 'Empresa no encontrada.'
 ERROR_FORMATO_FECHA_INVALIDO = 'Formato de fecha inválido.'
 
 @login_required
+@require_GET
 def lista_cuentas(request):
     """Lista todas las cuentas con filtros jerárquicos"""
     cuentas = Cuenta.objects.select_related('empresa', 'cuenta_padre').all().order_by('codigo')
@@ -55,6 +57,7 @@ def lista_cuentas(request):
     return render(request, 'cuentas/lista_cuentas.html', context)
 
 @login_required
+@require_GET
 def arbol_cuentas(request, empresa_id):
     """Muestra el árbol jerárquico de cuentas de una empresa"""
     empresa = get_object_or_404(Empresa, id=empresa_id)
@@ -74,6 +77,7 @@ def arbol_cuentas(request, empresa_id):
     return render(request, 'cuentas/arbol_cuentas.html', context)
 
 @login_required
+@require_GET
 def detalle_cuenta(request, cuenta_id):
     """Muestra el detalle de una cuenta"""
     cuenta = get_object_or_404(Cuenta.objects.select_related('empresa', 'cuenta_padre'), id=cuenta_id)
@@ -105,6 +109,7 @@ def detalle_cuenta(request, cuenta_id):
     return render(request, 'cuentas/detalle_cuenta.html', context)
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def crear_cuenta(request):
     """Crea una nueva cuenta"""
     if request.method == 'POST':
@@ -125,6 +130,7 @@ def crear_cuenta(request):
     return render(request, 'cuentas/crear_cuenta.html', {'form': form})
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def editar_cuenta(request, cuenta_id):
     """Edita una cuenta existente"""
     cuenta = get_object_or_404(Cuenta, id=cuenta_id)
@@ -150,6 +156,7 @@ def editar_cuenta(request, cuenta_id):
     })
 
 @login_required
+@require_http_methods(['GET', 'POST'])
 def eliminar_cuenta(request, cuenta_id):
     """Desactiva una cuenta (no la elimina físicamente)"""
     cuenta = get_object_or_404(Cuenta, id=cuenta_id)
@@ -178,6 +185,7 @@ def eliminar_cuenta(request, cuenta_id):
 # ============================================
 
 @login_required
+@require_GET
 def reportes_menu(request):
     """Menú principal de reportes financieros"""
     empresas = Empresa.objects.filter(activo=True)
@@ -190,6 +198,7 @@ def reportes_menu(request):
 
 
 @login_required
+@require_GET
 def balance_comprobacion_view(request):
     """Vista para el Balance de Comprobación"""
     from .reportes import BalanceComprobacion
@@ -228,6 +237,7 @@ def balance_comprobacion_view(request):
 
 
 @login_required
+@require_GET
 def estado_resultados_view(request):
     """Vista para el Estado de Resultados"""
     from .reportes import EstadoResultados
@@ -266,6 +276,7 @@ def estado_resultados_view(request):
 
 
 @login_required
+@require_GET
 def balance_general_view(request):
     """Vista para el Balance General"""
     from .reportes import BalanceGeneral
