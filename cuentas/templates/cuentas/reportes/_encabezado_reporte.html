@@ -1,0 +1,26 @@
+{% comment %} Encabezado reutilizable para reportes contables Parámetros: -
+reporte: Objeto con los datos del reporte - titulo: Título del reporte -
+mostrar_badge: Si debe mostrar badge de resultado (para estado de resultados) {%
+endcomment %}
+
+<div class="reporte-header">
+  <h2>{{ reporte.empresa.nombre }}</h2>
+  <p><strong>{{ titulo }}</strong></p>
+
+  {% if reporte.fecha_inicio and reporte.fecha_fin %}
+  <p>
+    Del {{ reporte.fecha_inicio|date:"d/m/Y" }} al {{
+    reporte.fecha_fin|date:"d/m/Y" }}
+  </p>
+  {% elif reporte.fecha_fin %}
+  <p>Al {{ reporte.fecha_fin|date:"d/m/Y" }}</p>
+  {% else %}
+  <p>A la fecha actual / Todos los períodos</p>
+  {% endif %} {% if mostrar_badge and reporte.resultado %}
+  <span
+    class="resultado-badge {% if reporte.resultado == 'UTILIDAD' %}utilidad{% else %}perdida{% endif %}"
+  >
+    {{ reporte.resultado }}
+  </span>
+  {% endif %}
+</div>

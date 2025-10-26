@@ -1,0 +1,86 @@
+{% comment %} JavaScript reutilizable para formularios de producto {% endcomment
+%}
+
+<script>
+  function crearCategoria() {
+    const form = document.getElementById("formNuevaCategoria");
+    const formData = new FormData(form);
+
+    fetch('{% url "inventario:crear_categoria" %}', {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
+          .value,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          // Agregar nueva opción al select
+          const select = document.getElementById(
+            "{{ form.categoria.id_for_label }}"
+          );
+          const option = new Option(
+            data.categoria.nombre,
+            data.categoria.id,
+            true,
+            true
+          );
+          select.add(option);
+
+          // Cerrar modal y limpiar formulario
+          const modal = bootstrap.Modal.getInstance(
+            document.getElementById("nuevaCategoriaModal")
+          );
+          modal.hide();
+          form.reset();
+
+          // Mostrar mensaje de éxito
+          alert("Categoría creada exitosamente");
+        } else {
+          alert("Error al crear la categoría: " + data.error);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error al crear la categoría");
+      });
+  }
+
+  // Calcular valor total automáticamente
+  document.addEventListener("DOMContentLoaded", function () {
+    const cantidadInput = document.getElementById(
+      "{{ form.cantidad.id_for_label }}"
+    );
+    const precioInput = document.getElementById(
+      "{{ form.precio_unitario.id_for_label }}"
+    );
+
+    function calcularValorTotal() {
+      const cantidad = Number.parseFloat(cantidadInput.value) || 0;
+      const precio = Number.parseFloat(precioInput.value) || 0;
+      const total = cantidad * precio;
+
+      // Actualizar el texto en la información del registro (solo en edición)
+      const valorTotalSpan = document.querySelector(
+        '.card-body small:contains("Valor total actual")'
+      );
+      if (valorTotalSpan) {
+        valorTotalSpan.innerHTML = valorTotalSpan.innerHTML.replace(
+          /\$[\d,]+\.\d{2}/,
+          "$" +
+            total.toLocaleString("es-CO", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+        );
+      }
+    }
+
+    if (cantidadInput && precioInput) {
+      cantidadInput.addEventListener("input", calcularValorTotal);
+      precioInput.addEventListener("input", calcularValorTotal);
+    }
+  });
+</script>

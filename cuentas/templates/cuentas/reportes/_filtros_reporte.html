@@ -1,0 +1,48 @@
+{% comment %} Formulario de filtros reutilizable para reportes contables
+Parámetros: - btn_icon: Ícono del botón (default: fa-chart-bar) - btn_text:
+Texto del botón (default: Generar Reporte) - empresas: Lista de empresas
+disponibles {% endcomment %}
+
+<div class="filtros-card">
+  <h3 style="margin-bottom: 20px">
+    <i class="fas fa-filter"></i> Filtros del Reporte
+  </h3>
+  <form method="GET">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="empresa_id">Empresa *</label>
+        <select name="empresa_id" id="empresa_id" class="form-control" required>
+          <option value="">Seleccione una empresa</option>
+          {% for empresa in empresas %}
+          <option value="{{ empresa.id }}">{{ empresa.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_inicio">Fecha Inicio</label>
+        <input
+          type="date"
+          name="fecha_inicio"
+          id="fecha_inicio"
+          class="form-control"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">Fecha Fin</label>
+        <input
+          type="date"
+          name="fecha_fin"
+          id="fecha_fin"
+          class="form-control"
+        />
+      </div>
+    </div>
+
+    <button type="submit" class="btn-generar">
+      <i class="fas {{ btn_icon|default:'fa-chart-bar' }}"></i>
+      {{ btn_text|default:"Generar Reporte" }}
+    </button>
+  </form>
+</div>

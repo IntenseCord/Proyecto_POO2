@@ -1,0 +1,186 @@
+{% comment %} Template parcial para el formulario de producto Usado tanto en
+crear como en editar producto {% endcomment %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <label for="{{ form.codigo.id_for_label }}" class="form-label">
+        {{ form.codigo.label }}
+      </label>
+      {{ form.codigo }} {% if form.codigo.help_text %}
+      <small class="form-text text-muted">{{ form.codigo.help_text }}</small>
+      {% endif %} {% if form.codigo.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in form.codigo.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <label for="{{ form.categoria.id_for_label }}" class="form-label">
+        {{ form.categoria.label }}
+      </label>
+      <div class="input-group">
+        {{ form.categoria }}
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-toggle="modal"
+          data-bs-target="#nuevaCategoriaModal"
+        >
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+      {% if form.categoria.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in form.categoria.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="{{ form.nombre.id_for_label }}" class="form-label">
+      {{ form.nombre.label }} <span class="text-danger">*</span>
+    </label>
+    {{ form.nombre }} {% if form.nombre.errors %}
+    <div class="invalid-feedback d-block">
+      {% for error in form.nombre.errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+      {{ form.descripcion.label }}
+    </label>
+    {{ form.descripcion }} {% if form.descripcion.errors %}
+    <div class="invalid-feedback d-block">
+      {% for error in form.descripcion.errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <label for="{{ form.cantidad.id_for_label }}" class="form-label">
+        {{ form.cantidad.label }} <span class="text-danger">*</span>
+      </label>
+      {{ form.cantidad }} {% if form.cantidad.help_text %}
+      <small class="form-text text-muted">{{ form.cantidad.help_text }}</small>
+      {% endif %} {% if form.cantidad.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in form.cantidad.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %} {% if es_edicion and producto %}
+      <div class="alert alert-warning mt-2">
+        <small>
+          <i class="fas fa-info-circle"></i>
+          <strong>Nota:</strong> Para cambios de stock, es recomendable usar
+          <a href="{% url 'inventario:crear_movimiento' producto.id %}"
+            >movimientos de inventario</a
+          >
+          para mantener un historial completo.
+        </small>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <label for="{{ form.precio_unitario.id_for_label }}" class="form-label">
+        {{ form.precio_unitario.label }} <span class="text-danger">*</span>
+      </label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        {{ form.precio_unitario }}
+      </div>
+      {% if form.precio_unitario.help_text %}
+      <small class="form-text text-muted"
+        >{{ form.precio_unitario.help_text }}</small
+      >
+      {% endif %} {% if form.precio_unitario.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in form.precio_unitario.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <label for="{{ form.stock_minimo.id_for_label }}" class="form-label">
+        {{ form.stock_minimo.label }}
+      </label>
+      {{ form.stock_minimo }} {% if form.stock_minimo.help_text %}
+      <small class="form-text text-muted"
+        >{{ form.stock_minimo.help_text }}</small
+      >
+      {% endif %} {% if form.stock_minimo.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in form.stock_minimo.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="{{ form.estado.id_for_label }}" class="form-label">
+      {{ form.estado.label }}
+    </label>
+    {{ form.estado }} {% if form.estado.errors %}
+    <div class="invalid-feedback d-block">
+      {% for error in form.estado.errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if es_edicion and producto %}
+  <!-- Información adicional para edición -->
+  <div class="card bg-light mb-3">
+    <div class="card-body">
+      <h6 class="card-title">Información del Registro</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <small class="text-muted">
+            <strong>Creado:</strong> {{ producto.fecha_creacion|date:"d/m/Y H:i"
+            }}<br />
+            {% if producto.usuario_creador %}
+            <strong>Por:</strong> {{
+            producto.usuario_creador.get_full_name|default:producto.usuario_creador.username
+            }} {% endif %}
+          </small>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted">
+            <strong>Última actualización:</strong> {{
+            producto.fecha_actualizacion|date:"d/m/Y H:i" }}<br />
+            <strong>Valor total actual:</strong> ${{
+            producto.valor_total|floatformat:2 }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+    {% if es_edicion and producto %}
+    <a
+      href="{% url 'inventario:detalle_producto' producto.id %}"
+      class="btn btn-outline-secondary me-md-2"
+    >
+      <i class="fas fa-times"></i> Cancelar
+    </a>
+    {% else %}
+    <a
+      href="{% url 'inventario:lista_productos' %}"
+      class="btn btn-outline-secondary me-md-2"
+    >
+      <i class="fas fa-times"></i> Cancelar
+    </a>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">
+      <i class="fas fa-save"></i> {{ texto_boton|default:"Guardar" }}
+    </button>
+  </div>
+</form>

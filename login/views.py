@@ -20,7 +20,7 @@ LOGIN_ROUTE_NAME = 'login:login'
 CAMBIAR_CONTRASENA_TEMPLATE = 'cambiar_contrasena.html'
 
 # Mensajes de error comunes
-ERROR_PASSWORD_TOO_SHORT = 'La contraseña debe tener al menos 6 caracteres'
+ERROR_CLAVE_CORTA = 'La contraseña debe tener al menos 6 caracteres'
 
 def landing_view(request):
     """Vista para la página de bienvenida"""
@@ -238,7 +238,7 @@ def restablecer_contrasena_view(request, token):
             elif password1 != password2:
                 messages.error(request, 'Las contraseñas no coinciden')
             elif len(password1) < 6:
-                messages.error(request, ERROR_PASSWORD_TOO_SHORT)
+                messages.error(request, ERROR_CLAVE_CORTA)
             else:
                 # Cambiar contraseña
                 user = recuperacion.user
@@ -458,7 +458,7 @@ def _validate_registration(
     if password1 != password2:
         return 'Las contraseñas no coinciden'
     if len(password1) < 6:
-        return ERROR_PASSWORD_TOO_SHORT
+        return ERROR_CLAVE_CORTA
     if User.objects.filter(username=username).exists():
         return 'El nombre de usuario ya existe'
     if email and User.objects.filter(email=email).exists():
