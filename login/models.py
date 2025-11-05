@@ -9,6 +9,8 @@ from django.dispatch import receiver
 class Perfil(models.Model):
     """Modelo para el perfil extendido del usuario"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
+    empresa = models.ForeignKey('empresa.Empresa', on_delete=models.SET_NULL, null=True, blank=True, 
+                                related_name='usuarios', verbose_name='Empresa')
     foto = models.ImageField(upload_to='perfiles/', null=True, blank=True, default='perfiles/default.png')
     telefono = models.CharField(max_length=20, blank=True, default='')
     direccion = models.CharField(max_length=255, blank=True, default='')

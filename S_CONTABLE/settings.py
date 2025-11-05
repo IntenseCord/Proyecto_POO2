@@ -27,9 +27,19 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',') if h.strip()]
+
 # Trusted origins for CSRF when deployed (e.g., https://your-app.onrender.com)
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=str).split(',')
+csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='', cast=str).strip()
+if csrf_origins:
+    # Solo agregar orígenes que comiencen con http:// o https://
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip() 
+        for origin in csrf_origins.split(',') 
+        if origin.strip() and (origin.strip().startswith('http://') or origin.strip().startswith('https://'))
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 
 # Application definition

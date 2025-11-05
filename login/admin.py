@@ -3,9 +3,24 @@ from .models import VerificacionEmail, Perfil, RecuperacionContrasena, IntentoLo
 
 @admin.register(Perfil)
 class PerfilAdmin(admin.ModelAdmin):
-    list_display = ('user', 'telefono', 'fecha_actualizacion')
-    search_fields = ('user__username', 'user__email', 'telefono')
+    list_display = ('user', 'empresa', 'telefono', 'fecha_actualizacion')
+    list_filter = ('empresa',)
+    search_fields = ('user__username', 'user__email', 'telefono', 'empresa__nombre')
     readonly_fields = ('fecha_actualizacion',)
+    autocomplete_fields = ['empresa']
+    
+    fieldsets = (
+        ('Información de Usuario', {
+            'fields': ('user', 'empresa')
+        }),
+        ('Información Personal', {
+            'fields': ('foto', 'telefono', 'direccion', 'fecha_nacimiento', 'bio')
+        }),
+        ('Metadatos', {
+            'fields': ('fecha_actualizacion',),
+            'classes': ('collapse',)
+        }),
+    )
 
 @admin.register(VerificacionEmail)
 class VerificacionEmailAdmin(admin.ModelAdmin):

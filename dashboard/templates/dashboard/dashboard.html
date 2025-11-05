@@ -140,10 +140,16 @@
     gap: 25px;
     margin-bottom: 30px;
   }
-</style>
-{% endblock %}
 
-{% block content %}
+  .text-success {
+    color: #28a745;
+  }
+
+  .text-danger {
+    color: #dc3545;
+  }
+</style>
+{% endblock %} {% block content %}
 <!-- Estadísticas Principales (Solo Administradores) -->
 {% if es_admin %}
 <div class="stats-grid">
@@ -258,10 +264,14 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon {% if utilidad_mes >= 0 %}purple{% else %}orange{% endif %}">
+    <div
+      class="stat-icon {% if utilidad_mes >= 0 %}purple{% else %}orange{% endif %}"
+    >
       <i class="fas fa-chart-line"></i>
     </div>
-    <div class="stat-value" style="color: {% if utilidad_mes >= 0 %}#28a745{% else %}#dc3545{% endif %}">
+    <div
+      class="stat-value {% if utilidad_mes >= 0 %}text-success{% else %}text-danger{% endif %}"
+    >
       ${{ utilidad_mes|floatformat:2 }}
     </div>
     <div class="stat-label">Utilidad del Mes</div>
@@ -328,7 +338,7 @@
       <h3><i class="fas fa-boxes"></i> Productos por Categoría</h3>
     </div>
     {% if productos_por_categoria %}
-    <div style="padding: 20px; height: 350px;">
+    <div style="padding: 20px; height: 350px">
       <canvas id="chartProductos"></canvas>
     </div>
     {% else %}
@@ -359,7 +369,7 @@
       <h3><i class="fas fa-chart-pie"></i> Movimientos por Tipo</h3>
     </div>
     {% if movimientos_por_tipo %}
-    <div style="padding: 20px; height: 350px;">
+    <div style="padding: 20px; height: 350px">
       <canvas id="movimientosTipoChart"></canvas>
     </div>
     {% else %}
@@ -391,7 +401,7 @@
   <div class="chart-header">
     <h3><i class="fas fa-chart-bar"></i> Ingresos vs Egresos del Mes</h3>
   </div>
-  <div style="padding: 20px; height: 350px;">
+  <div style="padding: 20px; height: 350px">
     <canvas id="ingresosEgresosChart"></canvas>
   </div>
 </div>
@@ -560,10 +570,12 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-qMbf16KOR+VfmVchEKf/tSDfRnFvGqQDvjvVkwEKCh4VQVL6vvXpCaVvVjTnCqNu" crossorigin="anonymous"></script>
+{% endblock %} {% block extra_js %}
+<script
+  src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+  integrity="sha384-qMbf16KOR+VfmVchEKf/tSDfRnFvGqQDvjvVkwEKCh4VQVL6vvXpCaVvVjTnCqNu"
+  crossorigin="anonymous"
+></script>
 <script>
   {% if es_admin %}
   // Gráfico de Comprobantes por Tipo
@@ -681,13 +693,9 @@
 
   // Gráfico de Movimientos por Tipo (visible para todos)
   {% if movimientos_por_tipo %}
-  console.log('Datos de movimientos:', {{ movimientos_por_tipo }});
   const ctxMovimientos = document.getElementById('movimientosTipoChart');
-  if (!ctxMovimientos) {
-    console.error('No se encontró el canvas movimientosTipoChart');
-  } else {
-    const ctx = ctxMovimientos.getContext('2d');
-  new Chart(ctxMovimientos, {
+  if (ctxMovimientos) {
+    new Chart(ctxMovimientos, {
       type: 'doughnut',
       data: {
           labels: [
@@ -717,7 +725,7 @@
               }
           }
       }
-  });
+    });
   }
   {% endif %}
 

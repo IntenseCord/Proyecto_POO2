@@ -199,10 +199,12 @@ def eliminar_cuenta(request, cuenta_id):
 @require_GET
 def reportes_menu(request):
     """Menú principal de reportes financieros"""
-    empresas = Empresa.objects.filter(activo=True)
+    from login.utils import obtener_empresa_usuario
+    
+    empresa = obtener_empresa_usuario(request.user)
     
     context = {
-        'empresas': empresas,
+        'empresa': empresa,
     }
     
     return render(request, 'cuentas/reportes/menu.html', context)
@@ -215,18 +217,21 @@ def balance_comprobacion_view(request):
     """Vista para el Balance de Comprobación"""
     from .reportes import BalanceComprobacion
     from datetime import datetime
+    from login.utils import obtener_empresa_usuario
     
-    empresas = Empresa.objects.filter(activo=True)
     reporte_data = None
+    empresa = obtener_empresa_usuario(request.user)
     
-    if request.method == 'GET' and 'empresa_id' in request.GET:
-        empresa_id = request.GET.get('empresa_id')
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
+        return render(request, 'cuentas/reportes/balance_comprobacion.html', {'reporte': None, 'empresa': None})
+    
+    # Si hay parámetros de fecha, generar el reporte
+    if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
         fecha_inicio = request.GET.get('fecha_inicio')
         fecha_fin = request.GET.get('fecha_fin')
         
         try:
-            empresa = Empresa.objects.get(id=empresa_id)
-            
             # Convertir fechas si existen
             fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
             fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
@@ -235,13 +240,11 @@ def balance_comprobacion_view(request):
             reporte = BalanceComprobacion(empresa, fecha_inicio_obj, fecha_fin_obj)
             reporte_data = reporte.generar()
             
-        except Empresa.DoesNotExist:
-            messages.error(request, ERROR_EMPRESA_NO_ENCONTRADA)
         except ValueError:
             messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
     
     context = {
-        'empresas': empresas,
+        'empresa': empresa,
         'reporte': reporte_data,
     }
     
@@ -255,18 +258,21 @@ def estado_resultados_view(request):
     """Vista para el Estado de Resultados"""
     from .reportes import EstadoResultados
     from datetime import datetime
+    from login.utils import obtener_empresa_usuario
     
-    empresas = Empresa.objects.filter(activo=True)
     reporte_data = None
+    empresa = obtener_empresa_usuario(request.user)
     
-    if request.method == 'GET' and 'empresa_id' in request.GET:
-        empresa_id = request.GET.get('empresa_id')
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
+        return render(request, 'cuentas/reportes/estado_resultados.html', {'reporte': None, 'empresa': None})
+    
+    # Si hay parámetros de fecha, generar el reporte
+    if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
         fecha_inicio = request.GET.get('fecha_inicio')
         fecha_fin = request.GET.get('fecha_fin')
         
         try:
-            empresa = Empresa.objects.get(id=empresa_id)
-            
             # Convertir fechas si existen
             fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
             fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
@@ -275,13 +281,11 @@ def estado_resultados_view(request):
             reporte = EstadoResultados(empresa, fecha_inicio_obj, fecha_fin_obj)
             reporte_data = reporte.generar()
             
-        except Empresa.DoesNotExist:
-            messages.error(request, ERROR_EMPRESA_NO_ENCONTRADA)
         except ValueError:
             messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
     
     context = {
-        'empresas': empresas,
+        'empresa': empresa,
         'reporte': reporte_data,
     }
     
@@ -295,18 +299,21 @@ def balance_general_view(request):
     """Vista para el Balance General"""
     from .reportes import BalanceGeneral
     from datetime import datetime
+    from login.utils import obtener_empresa_usuario
     
-    empresas = Empresa.objects.filter(activo=True)
     reporte_data = None
+    empresa = obtener_empresa_usuario(request.user)
     
-    if request.method == 'GET' and 'empresa_id' in request.GET:
-        empresa_id = request.GET.get('empresa_id')
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
+        return render(request, 'cuentas/reportes/balance_general.html', {'reporte': None, 'empresa': None})
+    
+    # Si hay parámetros de fecha, generar el reporte
+    if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
         fecha_inicio = request.GET.get('fecha_inicio')
         fecha_fin = request.GET.get('fecha_fin')
         
         try:
-            empresa = Empresa.objects.get(id=empresa_id)
-            
             # Convertir fechas si existen
             fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
             fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
@@ -315,14 +322,101 @@ def balance_general_view(request):
             reporte = BalanceGeneral(empresa, fecha_inicio_obj, fecha_fin_obj)
             reporte_data = reporte.generar()
             
-        except Empresa.DoesNotExist:
-            messages.error(request, ERROR_EMPRESA_NO_ENCONTRADA)
         except ValueError:
             messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
     
     context = {
-        'empresas': empresas,
+        'empresa': empresa,
         'reporte': reporte_data,
     }
     
     return render(request, 'cuentas/reportes/balance_general.html', context)
+
+
+@login_required
+@never_cache
+@require_GET
+def balance_general_pdf(request):
+    """Exporta el Balance General a PDF"""
+    from .reportes import BalanceGeneral
+    from .export_service import ExportadorBalanceGeneral
+    from datetime import datetime
+    from login.utils import obtener_empresa_usuario
+    from django.http import FileResponse
+    
+    empresa = obtener_empresa_usuario(request.user)
+    
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada.')
+        return redirect('cuentas:balance_general')
+    
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    try:
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+        
+        # Generar reporte
+        reporte = BalanceGeneral(empresa, fecha_inicio_obj, fecha_fin_obj)
+        reporte_data = reporte.generar()
+        
+        # Exportar a PDF
+        exportador = ExportadorBalanceGeneral(reporte_data)
+        pdf_buffer = exportador.exportar_pdf()
+        
+        # Crear nombre de archivo
+        filename = f"balance_general_{empresa.nombre}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        
+        return FileResponse(pdf_buffer, as_attachment=True, filename=filename)
+        
+    except Exception as e:
+        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        return redirect('cuentas:balance_general')
+
+
+@login_required
+@never_cache
+@require_GET
+def balance_general_excel(request):
+    """Exporta el Balance General a Excel"""
+    from .reportes import BalanceGeneral
+    from .export_service import ExportadorBalanceGeneral
+    from datetime import datetime
+    from login.utils import obtener_empresa_usuario
+    from django.http import HttpResponse
+    
+    empresa = obtener_empresa_usuario(request.user)
+    
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada.')
+        return redirect('cuentas:balance_general')
+    
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    try:
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+        
+        # Generar reporte
+        reporte = BalanceGeneral(empresa, fecha_inicio_obj, fecha_fin_obj)
+        reporte_data = reporte.generar()
+        
+        # Exportar a Excel
+        exportador = ExportadorBalanceGeneral(reporte_data)
+        excel_buffer = exportador.exportar_excel()
+        
+        # Crear respuesta HTTP
+        filename = f"balance_general_{empresa.nombre}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        response = HttpResponse(
+            excel_buffer.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Error al generar el Excel: {str(e)}')
+        return redirect('cuentas:balance_general')

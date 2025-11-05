@@ -381,6 +381,22 @@ class BalanceGeneral(ReporteFinanciero):
         total_pasivo_patrimonio = total_pasivos + total_patrimonio_con_utilidad
         ecuacion_balanceada = abs(total_activos - total_pasivo_patrimonio) < Decimal('0.01')
         
+        # Clasificar activos y pasivos
+        activos_clasificados = self._clasificar_activos(activos)
+        pasivos_clasificados = self._clasificar_pasivos(pasivos)
+        
+        # Calcular ratios financieros
+        ratios = self._calcular_ratios_financieros(
+            activos_clasificados, 
+            pasivos_clasificados, 
+            total_activos, 
+            total_pasivos, 
+            total_patrimonio_con_utilidad
+        )
+        
+        # Preparar datos para gráficos
+        datos_graficos = self._preparar_datos_graficos(activos, pasivos, patrimonios, total_activos, total_pasivos, total_patrimonio_con_utilidad)
+        
         return {
             'empresa': self.empresa,
             'fecha_inicio': self.fecha_inicio,
@@ -388,6 +404,8 @@ class BalanceGeneral(ReporteFinanciero):
             'activos': activos,
             'pasivos': pasivos,
             'patrimonios': patrimonios,
+            'activos_clasificados': activos_clasificados,
+            'pasivos_clasificados': pasivos_clasificados,
             'utilidad_periodo': utilidad_periodo,
             'totales': {
                 'activos': total_activos,
@@ -397,5 +415,118 @@ class BalanceGeneral(ReporteFinanciero):
                 'pasivo_patrimonio': total_pasivo_patrimonio,
             },
             'ecuacion_balanceada': ecuacion_balanceada,
-            'diferencia': total_activos - total_pasivo_patrimonio
+            'diferencia': total_activos - total_pasivo_patrimonio,
+            'ratios': ratios,
+            'datos_graficos': datos_graficos,
+        }
+    
+    def _clasificar_activos(self, activos):
+        """Clasifica los activos en corrientes y no corrientes"""
+        from .models import Activo
+        
+        corrientes = []
+        no_corrientes = []
+        total_corrientes = Decimal('0.00')
+        total_no_corrientes = Decimal('0.00')
+        
+        for activo in activos:
+            cuenta = activo['cuenta']
+            # Verificar si es un Activo con campo es_corriente
+            es_corriente = False
+            if hasattr(cuenta, 'activo'):
+                es_corriente = cuenta.activo.es_corriente
+            
+            if es_corriente:
+                corrientes.append(activo)
+                total_corrientes += activo['monto']
+            else:
+                no_corrientes.append(activo)
+                total_no_corrientes += activo['monto']
+        
+        return {
+            'corrientes': corrientes,
+            'no_corrientes': no_corrientes,
+            'total_corrientes': total_corrientes,
+            'total_no_corrientes': total_no_corrientes,
+        }
+    
+    def _clasificar_pasivos(self, pasivos):
+        """Clasifica los pasivos en corrientes y no corrientes"""
+        from .models import Pasivo
+        
+        corrientes = []
+        no_corrientes = []
+        total_corrientes = Decimal('0.00')
+        total_no_corrientes = Decimal('0.00')
+        
+        for pasivo in pasivos:
+            cuenta = pasivo['cuenta']
+            # Verificar si es un Pasivo con campo es_corriente
+            es_corriente = False
+            if hasattr(cuenta, 'pasivo'):
+                es_corriente = cuenta.pasivo.es_corriente
+            
+            if es_corriente:
+                corrientes.append(pasivo)
+                total_corrientes += pasivo['monto']
+            else:
+                no_corrientes.append(pasivo)
+                total_no_corrientes += pasivo['monto']
+        
+        return {
+            'corrientes': corrientes,
+            'no_corrientes': no_corrientes,
+            'total_corrientes': total_corrientes,
+            'total_no_corrientes': total_no_corrientes,
+        }
+    
+    def _calcular_ratios_financieros(self, activos_clasificados, pasivos_clasificados, total_activos, total_pasivos, total_patrimonio):
+        """Calcula los ratios financieros principales"""
+        ratios = {}
+        
+        # Ratio de Liquidez Corriente = Activo Corriente / Pasivo Corriente
+        if pasivos_clasificados['total_corrientes'] > 0:
+            ratios['liquidez_corriente'] = activos_clasificados['total_corrientes'] / pasivos_clasificados['total_corrientes']
+        else:
+            ratios['liquidez_corriente'] = Decimal('0.00')
+        
+        # Capital de Trabajo = Activo Corriente - Pasivo Corriente
+        ratios['capital_trabajo'] = activos_clasificados['total_corrientes'] - pasivos_clasificados['total_corrientes']
+        
+        # Ratio de Endeudamiento = (Pasivo Total / Activo Total) * 100
+        if total_activos > 0:
+            ratios['endeudamiento'] = (total_pasivos / total_activos) * 100
+        else:
+            ratios['endeudamiento'] = Decimal('0.00')
+        
+        # Ratio de Solvencia = (Patrimonio / Activo Total) * 100
+        if total_activos > 0:
+            ratios['solvencia'] = (total_patrimonio / total_activos) * 100
+        else:
+            ratios['solvencia'] = Decimal('0.00')
+        
+        # Ratio de Autonomía Financiera = Patrimonio / Pasivo Total
+        if total_pasivos > 0:
+            ratios['autonomia_financiera'] = total_patrimonio / total_pasivos
+        else:
+            ratios['autonomia_financiera'] = Decimal('0.00')
+        
+        return ratios
+    
+    def _preparar_datos_graficos(self, activos, pasivos, patrimonios, total_activos, total_pasivos, total_patrimonio):
+        """Prepara los datos para los gráficos Chart.js"""
+        
+        # Top 5 activos más grandes
+        activos_top = sorted(activos, key=lambda x: x['monto'], reverse=True)[:5]
+        
+        # Top 5 pasivos más grandes
+        pasivos_top = sorted(pasivos, key=lambda x: x['monto'], reverse=True)[:5]
+        
+        return {
+            'activos_labels': [a['nombre'][:30] for a in activos_top],
+            'activos_valores': [float(a['monto']) for a in activos_top],
+            'pasivos_labels': [p['nombre'][:30] for p in pasivos_top],
+            'pasivos_valores': [float(p['monto']) for p in pasivos_top],
+            'comparativo_labels': ['Activos', 'Pasivos', 'Patrimonio'],
+            'comparativo_valores': [float(total_activos), float(total_pasivos), float(total_patrimonio)],
         }
