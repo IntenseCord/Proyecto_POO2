@@ -1,6 +1,11 @@
-{% extends 'base.html' %} {% block title %}Balance de Comprobación{% endblock %}
-{% block page_title %}Balance de Comprobación{% endblock %} {% block extra_css
-%} {% include 'cuentas/reportes/_estilos_reporte.html' %}
+{% extends 'base.html' %}
+
+{% block title %}Balance de Comprobación{% endblock %}
+
+{% block page_title %}Balance de Comprobación{% endblock %}
+
+{% block extra_css %}
+{% include 'cuentas/reportes/_estilos_reporte.html' %}
 
 <style>
   .tabla-reporte {
@@ -47,10 +52,70 @@
     border-bottom: none !important;
   }
 </style>
-{% endblock %} {% block content %} {% include
-'cuentas/reportes/_filtros_reporte.html' with btn_text='Generar Reporte' %} {%
-if reporte %} {% include 'cuentas/reportes/_encabezado_reporte.html' with
-titulo='Balance de Comprobación' %}
+{% endblock %}
+
+{% block content %}
+<div class="filtros-card">
+  <h3 style="margin-bottom: 20px">
+    <i class="fas fa-filter"></i> Filtros del Reporte
+  </h3>
+  <form method="GET">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fecha_inicio">Fecha Inicio</label>
+        <input
+          type="date"
+          name="fecha_inicio"
+          id="fecha_inicio"
+          class="form-control"
+          value="{{ request.GET.fecha_inicio }}"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">Fecha Fin</label>
+        <input
+          type="date"
+          name="fecha_fin"
+          id="fecha_fin"
+          class="form-control"
+          value="{{ request.GET.fecha_fin }}"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="tipo_cuenta">Tipo de Cuenta</label>
+        <select name="tipo_cuenta" id="tipo_cuenta" class="form-control">
+          <option value="">Todos los tipos</option>
+          {% for tipo_value, tipo_label in tipos_cuenta %}
+          <option value="{{ tipo_value }}" {% if tipo_cuenta_seleccionado == tipo_value %}selected{% endif %}>
+            {{ tipo_label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button type="submit" name="generar" class="btn-generar">
+        <i class="fas fa-chart-bar"></i>
+        Generar Reporte
+      </button>
+      
+      {% if reporte %}
+      <a href="{% url 'cuentas:balance_comprobacion_pdf' %}?fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}&tipo_cuenta={{ request.GET.tipo_cuenta }}" 
+         class="btn-generar" 
+         style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); text-decoration: none; display: inline-flex; align-items: center;">
+        <i class="fas fa-file-pdf"></i>
+        Exportar a PDF
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+{% if reporte %}
+{% include 'cuentas/reportes/_encabezado_reporte.html' with titulo='Balance de Comprobación' %}
 
 <div class="tabla-reporte">
   <table>
@@ -76,14 +141,13 @@ titulo='Balance de Comprobación' %}
       </tr>
       {% empty %}
       <tr>
-        <td
-          colspan="6"
-          style="text-align: center; padding: 30px; color: #7f8c8d"
-        >
+        <td colspan="6" style="text-align: center; padding: 30px; color: #7f8c8d">
           No hay movimientos en el período seleccionado
         </td>
       </tr>
-      {% endfor %} {% if reporte.cuentas %}
+      {% endfor %}
+      
+      {% if reporte.cuentas %}
       <tr class="totales-row">
         <td colspan="2"><strong>TOTALES</strong></td>
         <td class="text-right">
@@ -106,12 +170,16 @@ titulo='Balance de Comprobación' %}
 
 {% if reporte.esta_balanceado %}
 <div class="alert-success">
-  <i class="fas fa-check-circle"></i> <strong>Balance Correcto:</strong> Los
-  débitos y créditos están balanceados.
+  <i class="fas fa-check-circle"></i> 
+  <strong>Balance Correcto:</strong> Los débitos y créditos están balanceados.
 </div>
 {% else %}
 <div class="alert-danger">
-  <i class="fas fa-exclamation-triangle"></i> <strong>Advertencia:</strong> Los
-  débitos y créditos NO están balanceados. Revise los asientos contables.
+  <i class="fas fa-exclamation-triangle"></i> 
+  <strong>Advertencia:</strong> Los débitos y créditos NO están balanceados. Revise los asientos contables.
 </div>
-{% endif %} {% endif %} {% endblock %}
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

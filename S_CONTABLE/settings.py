@@ -213,3 +213,127 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
+# Configuración de Jazzmin para mejorar el Admin
+JAZZMIN_SETTINGS = {
+    # Título en la barra del navegador
+    "site_title": "Sistema Contable Admin",
+    
+    # Título en el encabezado
+    "site_header": "Sistema Contable",
+    
+    # Marca en el encabezado
+    "site_brand": "Administración",
+    
+    # Logo en el login
+    "site_logo": None,
+    
+    # Logo en el sidebar
+    "site_logo_classes": "img-circle",
+    
+    # Texto de bienvenida
+    "welcome_sign": "Bienvenido al Panel de Administración",
+    
+    # Copyright
+    "copyright": "Sistema Contable 2025",
+    
+    # Buscar en el sidebar
+    "search_model": ["auth.User", "cuentas.Cuenta", "transacciones.Comprobante"],
+    
+    # Tema de colores
+    "topmenu_links": [
+        {"name": "Inicio", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Ver Sitio", "url": "/dashboard/", "new_window": True},
+    ],
+    
+    # Mostrar sidebar
+    "show_sidebar": True,
+    
+    # Navegación lateral
+    "navigation_expanded": True,
+    
+    # Ocultar apps
+    "hide_apps": [],
+    
+    # Ocultar modelos
+    "hide_models": [],
+    
+    # Orden de apps
+    "order_with_respect_to": ["auth", "empresa", "cuentas", "transacciones", "inventario"],
+    
+    # Iconos personalizados
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "empresa.Empresa": "fas fa-building",
+        "cuentas.Cuenta": "fas fa-list",
+        "transacciones.Comprobante": "fas fa-file-invoice",
+        "transacciones.DetalleComprobante": "fas fa-list-ul",
+        "inventario.Producto": "fas fa-box",
+        "inventario.Categoria": "fas fa-tags",
+        "inventario.MovimientoInventario": "fas fa-exchange-alt",
+    },
+    
+    # Tema de color
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    
+    # Temas disponibles
+    "show_ui_builder": False,
+    
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs"
+    },
+    
+    # Ocultar gráficos del dashboard
+    "show_recent_actions": False,
+    "show_dashboard_charts": False,
+    
+    # UI Tweaks
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": False,
+    "show_ui_builder": False,
+    
+    # Deshabilitar características que causan conflictos
+    "language_chooser": False,
+    
+    # Tema de color principal
+    "theme": "flatly",  # Opciones: default, darkly, flatly, journal, litera, lux, materia, minty, pulse, sandstone, simplex, slate, solar, spacelab, superhero, united, yeti
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": False,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "flatly",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
+}

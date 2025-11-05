@@ -19,6 +19,7 @@ urlpatterns = [
     path('reportes/balance-general/', views.balance_general_view, name='balance_general'),
     
     # Exportación de Reportes
+    path('reportes/balance-comprobacion/pdf/', views.balance_comprobacion_pdf, name='balance_comprobacion_pdf'),
     path('reportes/balance-general/pdf/', views.balance_general_pdf, name='balance_general_pdf'),
     path('reportes/balance-general/excel/', views.balance_general_excel, name='balance_general_excel'),
 ]

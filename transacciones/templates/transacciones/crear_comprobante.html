@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+
+{% block title %}Nueva Transacción{% endblock %}
+
+{% block page_title %}Nueva Transacción Contable{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-secondary {
+    background: #95a5a6;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 15px;
+  }
+
+  .detalles-section {
+    margin-top: 30px;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 12px;
+  }
+
+  .detalle-item {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+  }
+
+  .detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .btn-danger {
+    background: #e74c3c;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .btn-add {
+    background: #27ae60;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 15px;
+  }
+
+  .totales-box {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    border: 2px solid #667eea;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  }
+
+  .alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+  }
+
+  .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+  }
+
+  .errorlist li {
+    color: #e74c3c;
+    font-size: 13px;
+  }
+
+  textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2 style="margin-bottom: 25px; color: #2c3e50;">
+    <i class="fas fa-file-invoice"></i> Datos del Comprobante
+  </h2>
+
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    <strong>Importante:</strong> Recuerda que los débitos deben ser iguales a los créditos (principio de partida doble).
+  </div>
+
+  <form method="POST" id="comprobanteForm">
+    {% csrf_token %}
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="id_tipo">Tipo de Comprobante *</label>
+        {{ form.tipo }}
+        {% if form.tipo.errors %}
+          <ul class="errorlist">
+            {% for error in form.tipo.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="id_numero">Número *</label>
+        {{ form.numero }}
+        {% if form.numero.errors %}
+          <ul class="errorlist">
+            {% for error in form.numero.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="id_fecha">Fecha *</label>
+        {{ form.fecha }}
+        {% if form.fecha.errors %}
+          <ul class="errorlist">
+            {% for error in form.fecha.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="id_descripcion">Descripción *</label>
+      {{ form.descripcion }}
+      {% if form.descripcion.errors %}
+        <ul class="errorlist">
+          {% for error in form.descripcion.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="detalles-section">
+      <h3 style="margin-bottom: 20px; color: #2c3e50;">
+        <i class="fas fa-list"></i> Movimientos Contables
+      </h3>
+
+      {{ formset.management_form }}
+      
+      <div id="detalles-container">
+        {% for form in formset %}
+        <div class="detalle-item">
+          <div class="detalle-header">
+            <h4 style="margin: 0; color: #667eea;">Movimiento #<span class="detalle-num">{{ forloop.counter }}</span></h4>
+            {% if not forloop.first %}
+            <button type="button" class="btn-danger remove-detalle">
+              <i class="fas fa-trash"></i> Eliminar
+            </button>
+            {% endif %}
+          </div>
+          
+          {{ form.id }}
+          {{ form.DELETE }}
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cuenta *</label>
+              {{ form.cuenta }}
+              {% if form.cuenta.errors %}
+                <ul class="errorlist">
+                  {% for error in form.cuenta.errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+
+            <div class="form-group">
+              <label>Descripción *</label>
+              {{ form.descripcion }}
+              {% if form.descripcion.errors %}
+                <ul class="errorlist">
+                  {% for error in form.descripcion.errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Débito</label>
+              {{ form.debito }}
+              {% if form.debito.errors %}
+                <ul class="errorlist">
+                  {% for error in form.debito.errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+
+            <div class="form-group">
+              <label>Crédito</label>
+              {{ form.credito }}
+              {% if form.credito.errors %}
+                <ul class="errorlist">
+                  {% for error in form.credito.errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button type="button" class="btn-add" id="add-detalle">
+        <i class="fas fa-plus"></i> Agregar Movimiento
+      </button>
+
+      <div class="totales-box">
+        <div class="total-row">
+          <span>Total Débitos:</span>
+          <span id="total-debitos">$0.00</span>
+        </div>
+        <div class="total-row">
+          <span>Total Créditos:</span>
+          <span id="total-creditos">$0.00</span>
+        </div>
+        <div class="total-row" style="border-top: 2px solid #667eea; padding-top: 15px; margin-top: 10px;">
+          <span>Diferencia:</span>
+          <span id="diferencia">$0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px; display: flex; gap: 15px;">
+      <button type="submit" class="btn-primary">
+        <i class="fas fa-save"></i> Guardar Transacción
+      </button>
+      <a href="{% url 'transacciones:lista_comprobantes' %}" class="btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let detalleIndex = {{ formset.total_form_count }};
+  
+  // Calcular totales
+  function calcularTotales() {
+    let totalDebitos = 0;
+    let totalCreditos = 0;
+    
+    document.querySelectorAll('.detalle-item:not([style*="display: none"])').forEach(function(item) {
+      const debito = parseFloat(item.querySelector('input[name$="-debito"]').value) || 0;
+      const credito = parseFloat(item.querySelector('input[name$="-credito"]').value) || 0;
+      totalDebitos += debito;
+      totalCreditos += credito;
+    });
+    
+    const diferencia = totalDebitos - totalCreditos;
+    
+    document.getElementById('total-debitos').textContent = '$' + totalDebitos.toFixed(2);
+    document.getElementById('total-creditos').textContent = '$' + totalCreditos.toFixed(2);
+    document.getElementById('diferencia').textContent = '$' + Math.abs(diferencia).toFixed(2);
+    document.getElementById('diferencia').style.color = diferencia === 0 ? '#27ae60' : '#e74c3c';
+  }
+  
+  // Actualizar numeración de movimientos
+  function actualizarNumeracion() {
+    let contador = 1;
+    document.querySelectorAll('.detalle-item:not([style*="display: none"])').forEach(function(item) {
+      item.querySelector('.detalle-num').textContent = contador++;
+    });
+  }
+  
+  // Agregar event listeners a inputs
+  function agregarEventListeners(item) {
+    item.querySelectorAll('input[name$="-debito"], input[name$="-credito"]').forEach(function(input) {
+      input.addEventListener('input', calcularTotales);
+    });
+    
+    const removeBtn = item.querySelector('.remove-detalle');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function() {
+        item.style.display = 'none';
+        const deleteInput = item.querySelector('input[name$="-DELETE"]');
+        if (deleteInput) {
+          deleteInput.checked = true;
+        }
+        actualizarNumeracion();
+        calcularTotales();
+      });
+    }
+  }
+  
+  // Agregar nuevo movimiento
+  document.getElementById('add-detalle').addEventListener('click', function() {
+    const container = document.getElementById('detalles-container');
+    const firstItem = container.querySelector('.detalle-item');
+    const newItem = firstItem.cloneNode(true);
+    
+    // Limpiar valores
+    newItem.querySelectorAll('input, select, textarea').forEach(function(input) {
+      if (input.type === 'checkbox') {
+        input.checked = false;
+      } else {
+        input.value = '';
+      }
+      
+      // Actualizar name e id con nuevo índice
+      if (input.name) {
+        input.name = input.name.replace(/-\d+-/, '-' + detalleIndex + '-');
+      }
+      if (input.id) {
+        input.id = input.id.replace(/_\d+_/, '_' + detalleIndex + '_');
+      }
+    });
+    
+    // Asegurar que tenga botón de eliminar
+    let removeBtn = newItem.querySelector('.remove-detalle');
+    if (!removeBtn) {
+      const header = newItem.querySelector('.detalle-header');
+      removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger remove-detalle';
+      removeBtn.innerHTML = '<i class="fas fa-trash"></i> Eliminar';
+      header.appendChild(removeBtn);
+    }
+    
+    // Limpiar errores
+    newItem.querySelectorAll('.errorlist').forEach(function(el) {
+      el.remove();
+    });
+    
+    container.appendChild(newItem);
+    agregarEventListeners(newItem);
+    
+    // Actualizar management form
+    const totalForms = document.querySelector('input[name$="TOTAL_FORMS"]');
+    totalForms.value = parseInt(totalForms.value) + 1;
+    detalleIndex++;
+    
+    actualizarNumeracion();
+    calcularTotales();
+  });
+  
+  // Inicializar event listeners existentes
+  document.querySelectorAll('.detalle-item').forEach(function(item) {
+    agregarEventListeners(item);
+  });
+  
+  calcularTotales();
+  actualizarNumeracion();
+});
+</script>
+{% endblock %}

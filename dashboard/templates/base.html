@@ -300,6 +300,18 @@
           <i class="fas fa-exchange-alt"></i> Movimientos
         </a>
         <a
+          href="{% url 'cuentas:lista_cuentas' %}"
+          class="menu-item {% if request.resolver_match.namespace == 'cuentas' and 'reportes' not in request.path %}active{% endif %}"
+        >
+          <i class="fas fa-list"></i> Plan de Cuentas
+        </a>
+        <a
+          href="{% url 'transacciones:lista_comprobantes' %}"
+          class="menu-item {% if request.resolver_match.namespace == 'transacciones' %}active{% endif %}"
+        >
+          <i class="fas fa-file-invoice"></i> Transacciones
+        </a>
+        <a
           href="{% url 'cuentas:reportes_menu' %}"
           class="menu-item {% if 'reportes' in request.path %}active{% endif %}"
         >
@@ -367,22 +379,10 @@
                   justify-content: center;
                   color: white;
                   font-weight: 600;
+                  font-size: 18px;
                 "
               >
-                {% if request.user.perfil.foto %}
-                <img
-                  src="{{ request.user.perfil.foto.url }}"
-                  alt="{{ request.user.username }}"
-                  style="
-                    width: 100%;
-                    height: 100%;
-                    border-radius: 50%;
-                    object-fit: cover;
-                  "
-                />
-                {% else %}
                 {{ request.user.username|slice:":1"|upper }}
-                {% endif %}
               </div>
               <span style="color: #2c3e50; font-weight: 600"
                 >{{ request.user.username }}</span
@@ -418,22 +418,10 @@
                       justify-content: center;
                       color: white;
                       font-weight: 600;
+                      font-size: 24px;
                     "
                   >
-                    {% if request.user.perfil.foto %}
-                    <img
-                      src="{{ request.user.perfil.foto.url }}"
-                      alt="{{ request.user.username }}"
-                      style="
-                        width: 100%;
-                        height: 100%;
-                        border-radius: 50%;
-                        object-fit: cover;
-                      "
-                    />
-                    {% else %}
                     {{ request.user.username|slice:":1"|upper }}
-                    {% endif %}
                   </div>
                   <div>
                     <div style="font-weight: 600; color: #2c3e50">

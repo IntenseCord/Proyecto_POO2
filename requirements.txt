@@ -40,3 +40,4 @@ gunicorn
 whitenoise
 reportlab==4.0.7
 openpyxl==3.1.2
+django-jazzmin==2.6.0

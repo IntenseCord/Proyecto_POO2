@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}Transacciones Contables{% endblock %}
+
+{% block page_title %}Transacciones Contables{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filtros-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .tabla-comprobantes {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  .tabla-comprobantes table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .tabla-comprobantes th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #e9ecef;
+  }
+
+  .tabla-comprobantes td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .tabla-comprobantes tr:hover {
+    background: #f8f9fa;
+  }
+
+  .badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge-borrador {
+    background: #ffeaa7;
+    color: #d63031;
+  }
+
+  .badge-aprobado {
+    background: #55efc4;
+    color: #00b894;
+  }
+
+  .badge-anulado {
+    background: #dfe6e9;
+    color: #636e72;
+  }
+
+  .btn-sm {
+    padding: 5px 12px;
+    font-size: 13px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0 3px;
+  }
+
+  .btn-info {
+    background: #74b9ff;
+    color: white;
+  }
+
+  .btn-success {
+    background: #00b894;
+    color: white;
+  }
+
+  .btn-danger {
+    background: #d63031;
+    color: white;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+  <h2 style="margin: 0; color: #2c3e50;">
+    <i class="fas fa-file-invoice"></i> Listado de Transacciones
+  </h2>
+  <a href="{% url 'transacciones:crear_comprobante' %}" class="btn-primary">
+    <i class="fas fa-plus"></i> Nueva Transacción
+  </a>
+</div>
+
+<div class="filtros-card">
+  <h3 style="margin-bottom: 20px">
+    <i class="fas fa-filter"></i> Filtros
+  </h3>
+  <form method="GET">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="tipo">Tipo</label>
+        <select name="tipo" id="tipo" class="form-control">
+          <option value="">Todos los tipos</option>
+          {% for tipo_value, tipo_label in tipos %}
+          <option value="{{ tipo_value }}" {% if tipo_seleccionado == tipo_value %}selected{% endif %}>
+            {{ tipo_label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="estado">Estado</label>
+        <select name="estado" id="estado" class="form-control">
+          <option value="">Todos los estados</option>
+          <option value="BORRADOR" {% if estado_seleccionado == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+          <option value="APROBADO" {% if estado_seleccionado == 'APROBADO' %}selected{% endif %}>Aprobado</option>
+          <option value="ANULADO" {% if estado_seleccionado == 'ANULADO' %}selected{% endif %}>Anulado</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_desde">Fecha Desde</label>
+        <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_hasta">Fecha Hasta</label>
+        <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary">
+      <i class="fas fa-search"></i> Filtrar
+    </button>
+  </form>
+</div>
+
+<div class="tabla-comprobantes">
+  <table>
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Tipo</th>
+        <th>Fecha</th>
+        <th>Descripción</th>
+        <th class="text-right">Débito</th>
+        <th class="text-right">Crédito</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for comprobante in page_obj %}
+      <tr>
+        <td><strong>{{ comprobante.numero }}</strong></td>
+        <td>{{ comprobante.get_tipo_display }}</td>
+        <td>{{ comprobante.fecha|date:"d/m/Y" }}</td>
+        <td>{{ comprobante.descripcion|truncatewords:10 }}</td>
+        <td class="text-right">${{ comprobante.total_debito|floatformat:2 }}</td>
+        <td class="text-right">${{ comprobante.total_credito|floatformat:2 }}</td>
+        <td>
+          {% if comprobante.estado == 'BORRADOR' %}
+          <span class="badge badge-borrador">Borrador</span>
+          {% elif comprobante.estado == 'APROBADO' %}
+          <span class="badge badge-aprobado">Aprobado</span>
+          {% else %}
+          <span class="badge badge-anulado">Anulado</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'transacciones:detalle_comprobante' comprobante.id %}" class="btn-sm btn-info" title="Ver detalle">
+            <i class="fas fa-eye"></i>
+          </a>
+          {% if comprobante.estado == 'BORRADOR' %}
+          <a href="{% url 'transacciones:editar_comprobante' comprobante.id %}" class="btn-sm btn-success" title="Editar">
+            <i class="fas fa-edit"></i>
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 30px; color: #7f8c8d">
+          No hay transacciones registradas
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div style="margin-top: 20px; text-align: center;">
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+    <a href="?page=1">&laquo; Primera</a>
+    <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+    {% endif %}
+
+    <span style="margin: 0 15px;">
+      Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

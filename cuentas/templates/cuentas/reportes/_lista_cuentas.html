@@ -1,7 +1,14 @@
-{% comment %} Lista reutilizable de cuentas con total Parámetros: - cuentas:
-Lista de cuentas a mostrar - mensaje_vacio: Mensaje cuando no hay cuentas -
-mostrar_total: Si debe mostrar un subtotal - label_total: Etiqueta del total -
-valor_total: Valor del total {% endcomment %} {% for cuenta in cuentas %}
+{% comment %}
+Lista reutilizable de cuentas con total
+Parámetros:
+- cuentas: Lista de cuentas a mostrar
+- mensaje_vacio: Mensaje cuando no hay cuentas
+- mostrar_total: Si debe mostrar un subtotal
+- label_total: Etiqueta del total
+- valor_total: Valor del total
+{% endcomment %}
+
+{% for cuenta in cuentas %}
 <div class="cuenta-item">
   <div>
     <span class="cuenta-codigo">{{ cuenta.codigo }}</span>

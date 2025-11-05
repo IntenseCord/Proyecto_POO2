@@ -212,32 +212,42 @@ def reportes_menu(request):
 
 @login_required
 @never_cache
-@require_GET
 def balance_comprobacion_view(request):
     """Vista para el Balance de Comprobación"""
     from .reportes import BalanceComprobacion
     from datetime import datetime
     from login.utils import obtener_empresa_usuario
+    from .models import TipoCuenta
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
-        return render(request, 'cuentas/reportes/balance_comprobacion.html', {'reporte': None, 'empresa': None})
+        return render(request, 'cuentas/reportes/balance_comprobacion.html', {
+            'reporte': None, 
+            'empresa': None,
+            'tipos_cuenta': TipoCuenta.choices
+        })
     
     # Si hay parámetros de fecha, generar el reporte
     if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
         fecha_inicio = request.GET.get('fecha_inicio')
         fecha_fin = request.GET.get('fecha_fin')
+        tipo_cuenta = request.GET.get('tipo_cuenta', '')
         
         try:
             # Convertir fechas si existen
             fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
             fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
             
-            # Generar reporte
-            reporte = BalanceComprobacion(empresa, fecha_inicio_obj, fecha_fin_obj)
+            # Generar reporte con filtro de tipo de cuenta
+            reporte = BalanceComprobacion(
+                empresa, 
+                fecha_inicio_obj, 
+                fecha_fin_obj,
+                tipo_cuenta if tipo_cuenta else None
+            )
             reporte_data = reporte.generar()
             
         except ValueError:
@@ -246,9 +256,183 @@ def balance_comprobacion_view(request):
     context = {
         'empresa': empresa,
         'reporte': reporte_data,
+        'tipos_cuenta': TipoCuenta.choices,
+        'tipo_cuenta_seleccionado': request.GET.get('tipo_cuenta', ''),
     }
     
     return render(request, 'cuentas/reportes/balance_comprobacion.html', context)
+
+
+@login_required
+@never_cache
+@require_GET
+def balance_comprobacion_pdf(request):
+    """Exporta el Balance de Comprobación a PDF"""
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    from .reportes import BalanceComprobacion
+    from datetime import datetime
+    from login.utils import obtener_empresa_usuario
+    from io import BytesIO
+    
+    empresa = obtener_empresa_usuario(request.user)
+    
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada.')
+        return redirect('cuentas:balance_comprobacion')
+    
+    # Obtener parámetros
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    tipo_cuenta = request.GET.get('tipo_cuenta', '')
+    
+    try:
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+    except (ValueError, TypeError):
+        fecha_inicio_obj = None
+        fecha_fin_obj = None
+    
+    # Generar reporte
+    reporte = BalanceComprobacion(
+        empresa, 
+        fecha_inicio_obj, 
+        fecha_fin_obj,
+        tipo_cuenta if tipo_cuenta else None
+    )
+    reporte_data = reporte.generar()
+    
+    # Crear PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.5*inch, bottomMargin=0.5*inch)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para el título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#2c3e50'),
+        spaceAfter=12,
+        alignment=TA_CENTER
+    )
+    
+    # Estilo para subtítulos
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#7f8c8d'),
+        spaceAfter=20,
+        alignment=TA_CENTER
+    )
+    
+    # Encabezado
+    elements.append(Paragraph(f"<b>{empresa.nombre}</b>", title_style))
+    elements.append(Paragraph("Balance de Comprobación", title_style))
+    
+    # Período
+    periodo = ""
+    if fecha_inicio_obj and fecha_fin_obj:
+        periodo = f"Del {fecha_inicio_obj.strftime('%d/%m/%Y')} al {fecha_fin_obj.strftime('%d/%m/%Y')}"
+    elif fecha_inicio_obj:
+        periodo = f"Desde {fecha_inicio_obj.strftime('%d/%m/%Y')}"
+    elif fecha_fin_obj:
+        periodo = f"Hasta {fecha_fin_obj.strftime('%d/%m/%Y')}"
+    else:
+        periodo = "Todos los períodos"
+    
+    elements.append(Paragraph(periodo, subtitle_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Crear tabla
+    data = [['Código', 'Cuenta', 'Débitos', 'Créditos', 'Saldo Deudor', 'Saldo Acreedor']]
+    
+    for cuenta in reporte_data['cuentas']:
+        data.append([
+            cuenta['codigo'],
+            cuenta['nombre'][:40],  # Limitar longitud del nombre
+            f"${cuenta['debito']:,.2f}",
+            f"${cuenta['credito']:,.2f}",
+            f"${cuenta['saldo_deudor']:,.2f}",
+            f"${cuenta['saldo_acreedor']:,.2f}",
+        ])
+    
+    # Fila de totales
+    totales = reporte_data['totales']
+    data.append([
+        '',
+        'TOTALES',
+        f"${totales['debitos']:,.2f}",
+        f"${totales['creditos']:,.2f}",
+        f"${totales['saldo_deudor']:,.2f}",
+        f"${totales['saldo_acreedor']:,.2f}",
+    ])
+    
+    # Crear tabla con estilo
+    table = Table(data, colWidths=[0.8*inch, 3*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+    table.setStyle(TableStyle([
+        # Encabezado
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        
+        # Contenido
+        ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -2), 9),
+        ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
+        ('ALIGN', (0, 1), (1, -1), 'LEFT'),
+        ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f8f9fa')]),
+        
+        # Totales
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.whitesmoke),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, -1), (-1, -1), 10),
+        ('TOPPADDING', (0, -1), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 12),
+    ]))
+    
+    elements.append(table)
+    
+    # Indicador de balance
+    elements.append(Spacer(1, 0.3*inch))
+    if reporte_data['esta_balanceado']:
+        balance_text = "✓ Balance Correcto: Los débitos y créditos están balanceados."
+        color = colors.HexColor('#155724')
+    else:
+        balance_text = "⚠ Advertencia: Los débitos y créditos NO están balanceados."
+        color = colors.HexColor('#721c24')
+    
+    balance_style = ParagraphStyle(
+        'Balance',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=color,
+        alignment=TA_CENTER
+    )
+    elements.append(Paragraph(balance_text, balance_style))
+    
+    # Construir PDF
+    doc.build(elements)
+    
+    # Preparar respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    filename = f"balance_comprobacion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
 
 
 @login_required

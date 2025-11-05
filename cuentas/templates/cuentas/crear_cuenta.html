@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}Nueva Cuenta{% endblock %}
+
+{% block page_title %}Crear Nueva Cuenta Contable{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-check-input {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+
+  .form-check-label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-secondary {
+    background: #95a5a6;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 15px;
+  }
+
+  .help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+  }
+
+  .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+  }
+
+  .errorlist li {
+    color: #e74c3c;
+    font-size: 13px;
+  }
+
+  .alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2 style="margin-bottom: 25px; color: #2c3e50;">
+    <i class="fas fa-plus-circle"></i> Nueva Cuenta Contable
+  </h2>
+
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    <strong>Información:</strong> Complete los datos de la nueva cuenta. Los campos marcados con * son obligatorios.
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.empresa.id_for_label }}">{{ form.empresa.label }} *</label>
+        {{ form.empresa }}
+        {% if form.empresa.errors %}
+          <ul class="errorlist">
+            {% for error in form.empresa.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.codigo.id_for_label }}">{{ form.codigo.label }} *</label>
+        {{ form.codigo }}
+        {% if form.codigo.help_text %}
+          <div class="help-text">{{ form.codigo.help_text }}</div>
+        {% endif %}
+        {% if form.codigo.errors %}
+          <ul class="errorlist">
+            {% for error in form.codigo.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }} *</label>
+      {{ form.nombre }}
+      {% if form.nombre.errors %}
+        <ul class="errorlist">
+          {% for error in form.nombre.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.tipo.id_for_label }}">{{ form.tipo.label }} *</label>
+        {{ form.tipo }}
+        {% if form.tipo.errors %}
+          <ul class="errorlist">
+            {% for error in form.tipo.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.naturaleza.id_for_label }}">{{ form.naturaleza.label }} *</label>
+        {{ form.naturaleza }}
+        {% if form.naturaleza.errors %}
+          <ul class="errorlist">
+            {% for error in form.naturaleza.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.cuenta_padre.id_for_label }}">{{ form.cuenta_padre.label }}</label>
+      {{ form.cuenta_padre }}
+      {% if form.cuenta_padre.help_text %}
+        <div class="help-text">{{ form.cuenta_padre.help_text }}</div>
+      {% endif %}
+      {% if form.cuenta_padre.errors %}
+        <ul class="errorlist">
+          {% for error in form.cuenta_padre.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-check-label">
+          {{ form.acepta_movimiento }}
+          {{ form.acepta_movimiento.label }}
+        </label>
+        {% if form.acepta_movimiento.help_text %}
+          <div class="help-text">{{ form.acepta_movimiento.help_text }}</div>
+        {% endif %}
+        {% if form.acepta_movimiento.errors %}
+          <ul class="errorlist">
+            {% for error in form.acepta_movimiento.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-check-label">
+          {{ form.esta_activa }}
+          {{ form.esta_activa.label }}
+        </label>
+        {% if form.esta_activa.errors %}
+          <ul class="errorlist">
+            {% for error in form.esta_activa.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="margin-top: 30px; display: flex; gap: 15px;">
+      <button type="submit" class="btn-primary">
+        <i class="fas fa-save"></i> Guardar Cuenta
+      </button>
+      <a href="{% url 'cuentas:lista_cuentas' %}" class="btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

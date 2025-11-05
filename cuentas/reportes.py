@@ -74,6 +74,10 @@ class BalanceComprobacion(ReporteFinanciero):
     Muestra todas las cuentas con sus débitos, créditos y saldos.
     """
     
+    def __init__(self, empresa, fecha_inicio=None, fecha_fin=None, tipo_cuenta=None):
+        super().__init__(empresa, fecha_inicio, fecha_fin)
+        self.tipo_cuenta = tipo_cuenta
+    
     def generar(self):
         """
         Genera el Balance de Comprobación.
@@ -86,7 +90,13 @@ class BalanceComprobacion(ReporteFinanciero):
             empresa=self.empresa,
             esta_activa=True,
             acepta_movimiento=True
-        ).order_by('codigo')
+        )
+        
+        # Filtrar por tipo de cuenta si se especifica
+        if self.tipo_cuenta:
+            cuentas = cuentas.filter(tipo=self.tipo_cuenta)
+        
+        cuentas = cuentas.order_by('codigo')
         
         datos = []
         total_debitos = Decimal('0.00')
