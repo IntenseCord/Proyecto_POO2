@@ -203,25 +203,23 @@ def solicitar_recuperacion_view(request):
             messages.error(request, 'Por favor ingresa tu email')
             return render(request, 'solicitar_recuperacion.html')
         
-        try:
-            user = User.objects.get(email=email)
-            
-            # Crear token de recuperación
-            recuperacion = RecuperacionContrasena.objects.create(
-                user=user,
-                ip_address=get_client_ip(request)
-            )
-            
-            # Enviar email
-            enviar_email_recuperacion(user, recuperacion.token, request)
-            
-            messages.success(request, 'Te hemos enviado un email con instrucciones para recuperar tu contraseña.')
-            return redirect(LOGIN_ROUTE_NAME)
-            
-        except User.DoesNotExist:
-            # Por seguridad, no revelamos si el email existe o no
+        qs = User.objects.filter(email__iexact=email)
+
+        if qs.count() != 1:
             messages.success(request, 'Si el email existe, recibirás instrucciones para recuperar tu contraseña.')
             return redirect(LOGIN_ROUTE_NAME)
+
+        user = qs.first()
+
+        recuperacion = RecuperacionContrasena.objects.create(
+            user=user,
+            ip_address=get_client_ip(request)
+        )
+
+        enviar_email_recuperacion(user, recuperacion.token, request)
+
+        messages.success(request, 'Te hemos enviado un email con instrucciones para recuperar tu contraseña.')
+        return redirect(LOGIN_ROUTE_NAME)
     
     return render(request, 'solicitar_recuperacion.html')
 
