@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Cuenta{% endblock %}
+
+{% block page_title %}Editar Cuenta Contable{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .cuenta-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+  }
+
+  .cuenta-info h3 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+  }
+
+  .cuenta-info p {
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-check-input {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    align-items: center;
+    font-weight: normal;
+    cursor: pointer;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: #95a5a6;
+    color: white;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+  }
+
+  .errorlist li {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+
+  .help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+  }
+
+  .alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .alert-warning {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+  }
+
+  .alert-info {
+    background: #d1ecf1;
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <!-- Información actual de la cuenta -->
+  <div class="cuenta-info">
+    <h3><i class="fas fa-edit"></i> Editando Cuenta</h3>
+    <p><strong>{{ cuenta.codigo }}</strong> - {{ cuenta.nombre }}</p>
+    <p>Tipo: {{ cuenta.get_tipo_display }} | Naturaleza: {{ cuenta.get_naturaleza_display }}</p>
+  </div>
+
+  <!-- Advertencias -->
+  {% if cuenta.movimientos.all %}
+  <div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <strong>Atención:</strong> Esta cuenta tiene movimientos contables registrados. 
+    Algunos cambios podrían afectar los reportes financieros.
+  </div>
+  {% endif %}
+
+  {% if cuenta.subcuentas.all %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    <strong>Información:</strong> Esta cuenta tiene subcuentas asociadas.
+  </div>
+  {% endif %}
+
+  <!-- Formulario -->
+  <form method="POST">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="alert alert-warning">
+      <strong>Por favor corrige los siguientes errores:</strong>
+      <ul>
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <li>{{ field }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label for="{{ form.nombre.id_for_label }}">
+        {{ form.nombre.label }} <span style="color: red;">*</span>
+      </label>
+      {{ form.nombre }}
+      {% if form.nombre.errors %}
+        <ul class="errorlist">
+          {% for error in form.nombre.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.nombre.help_text %}
+        <div class="help-text">{{ form.nombre.help_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.codigo.id_for_label }}">
+        {{ form.codigo.label }} <span style="color: red;">*</span>
+      </label>
+      {{ form.codigo }}
+      {% if form.codigo.errors %}
+        <ul class="errorlist">
+          {% for error in form.codigo.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.codigo.help_text %}
+        <div class="help-text">{{ form.codigo.help_text }}</div>
+      {% endif %}
+      <div class="help-text">
+        <i class="fas fa-exclamation-circle"></i>
+        El código no puede modificarse si la cuenta tiene movimientos contables.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.tipo.id_for_label }}">
+        {{ form.tipo.label }} <span style="color: red;">*</span>
+      </label>
+      {{ form.tipo }}
+      {% if form.tipo.errors %}
+        <ul class="errorlist">
+          {% for error in form.tipo.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.tipo.help_text %}
+        <div class="help-text">{{ form.tipo.help_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.naturaleza.id_for_label }}">
+        {{ form.naturaleza.label }} <span style="color: red;">*</span>
+      </label>
+      {{ form.naturaleza }}
+      {% if form.naturaleza.errors %}
+        <ul class="errorlist">
+          {% for error in form.naturaleza.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.naturaleza.help_text %}
+        <div class="help-text">{{ form.naturaleza.help_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.cuenta_padre.id_for_label }}">
+        {{ form.cuenta_padre.label }}
+      </label>
+      {{ form.cuenta_padre }}
+      {% if form.cuenta_padre.errors %}
+        <ul class="errorlist">
+          {% for error in form.cuenta_padre.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.cuenta_padre.help_text %}
+        <div class="help-text">{{ form.cuenta_padre.help_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label>
+        {{ form.acepta_movimiento }}
+        <span class="form-check-label">{{ form.acepta_movimiento.label }}</span>
+      </label>
+      {% if form.acepta_movimiento.errors %}
+        <ul class="errorlist">
+          {% for error in form.acepta_movimiento.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.acepta_movimiento.help_text %}
+        <div class="help-text">{{ form.acepta_movimiento.help_text }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label>
+        {{ form.esta_activa }}
+        <span class="form-check-label">{{ form.esta_activa.label }}</span>
+      </label>
+      {% if form.esta_activa.errors %}
+        <ul class="errorlist">
+          {% for error in form.esta_activa.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if form.esta_activa.help_text %}
+        <div class="help-text">{{ form.esta_activa.help_text }}</div>
+      {% endif %}
+      <div class="help-text">
+        <i class="fas fa-info-circle"></i>
+        Desactivar la cuenta la ocultará del plan de cuentas pero mantendrá su historial.
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="btn-group">
+      <a href="{% url 'cuentas:detalle_cuenta' cuenta.id %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Guardar Cambios
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

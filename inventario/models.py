@@ -98,3 +98,157 @@ class MovimientoInventario(models.Model):
     
     def __str__(self):
         return f"{self.tipo.title()} - {self.producto.nombre} - {self.cantidad}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Guarda el movimiento y genera automáticamente comprobantes contables.
+        - Entrada: Débito Inventario, Crédito Bancos/Proveedores
+        - Salida: Débito Costo de Ventas, Crédito Inventario
+        """
+        es_nuevo = self.pk is None
+        super().save(*args, **kwargs)
+        
+        # Generar comprobante contable solo para nuevos movimientos
+        if es_nuevo and self.tipo in ['entrada', 'salida']:
+            self._generar_comprobante_contable()
+    
+    def _generar_comprobante_contable(self):
+        """Genera el comprobante contable automático para el movimiento"""
+        try:
+            from transacciones.models import Comprobante, DetalleComprobante, TipoComprobante
+            from cuentas.models import Cuenta
+            from empresa.models import Empresa
+            from decimal import Decimal
+            
+            # Obtener la empresa (primera activa o del perfil del usuario)
+            empresa = None
+            if self.usuario and hasattr(self.usuario, 'perfil') and self.usuario.perfil.empresa:
+                empresa = self.usuario.perfil.empresa
+            else:
+                empresa = Empresa.objects.filter(activo=True).first()
+            
+            if not empresa:
+                return  # No se puede crear comprobante sin empresa
+            
+            # Valor del movimiento
+            valor = Decimal(str(self.cantidad)) * self.producto.precio_unitario
+            
+            # Obtener o crear cuentas necesarias
+            cuenta_inventario, _ = Cuenta.objects.get_or_create(
+                empresa=empresa,
+                codigo='1105',
+                defaults={
+                    'nombre': 'Inventario de Mercancías',
+                    'tipo': 'A',
+                    'naturaleza': 'DEBITO',
+                    'acepta_movimiento': True,
+                    'esta_activa': True,
+                    'nivel': 2
+                }
+            )
+            
+            if self.tipo == 'entrada':
+                # Entrada de inventario: Débito Inventario, Crédito Bancos
+                cuenta_contrapartida, _ = Cuenta.objects.get_or_create(
+                    empresa=empresa,
+                    codigo='1110',
+                    defaults={
+                        'nombre': 'Bancos',
+                        'tipo': 'A',
+                        'naturaleza': 'DEBITO',
+                        'acepta_movimiento': True,
+                        'esta_activa': True,
+                        'nivel': 2
+                    }
+                )
+                
+                # Crear comprobante de entrada
+                comprobante = Comprobante.objects.create(
+                    empresa=empresa,
+                    tipo=TipoComprobante.INGRESO,
+                    numero=Comprobante.objects.filter(empresa=empresa).count() + 1,
+                    fecha=self.fecha.date(),
+                    descripcion=f'Entrada de inventario: {self.producto.nombre} - {self.motivo}',
+                    estado='BORRADOR',
+                    total_debito=valor,
+                    total_credito=valor,
+                    usuario_creador=self.usuario
+                )
+                
+                # Débito: Inventario (aumenta activo)
+                DetalleComprobante.objects.create(
+                    comprobante=comprobante,
+                    cuenta=cuenta_inventario,
+                    descripcion=f'Entrada: {self.producto.nombre} ({self.cantidad} unidades)',
+                    debito=valor,
+                    credito=Decimal('0.00'),
+                    orden=1
+                )
+                
+                # Crédito: Bancos (disminuye activo)
+                DetalleComprobante.objects.create(
+                    comprobante=comprobante,
+                    cuenta=cuenta_contrapartida,
+                    descripcion=f'Pago entrada inventario: {self.producto.nombre}',
+                    debito=Decimal('0.00'),
+                    credito=valor,
+                    orden=2
+                )
+                
+            elif self.tipo == 'salida':
+                # Salida de inventario: Débito Costo de Ventas, Crédito Inventario
+                cuenta_costo, _ = Cuenta.objects.get_or_create(
+                    empresa=empresa,
+                    codigo='6135',
+                    defaults={
+                        'nombre': 'Costo de Ventas',
+                        'tipo': 'C',
+                        'naturaleza': 'DEBITO',
+                        'acepta_movimiento': True,
+                        'esta_activa': True,
+                        'nivel': 2
+                    }
+                )
+                
+                # Crear comprobante de egreso
+                comprobante = Comprobante.objects.create(
+                    empresa=empresa,
+                    tipo=TipoComprobante.EGRESO,
+                    numero=Comprobante.objects.filter(empresa=empresa).count() + 1,
+                    fecha=self.fecha.date(),
+                    descripcion=f'Salida de inventario: {self.producto.nombre} - {self.motivo}',
+                    estado='BORRADOR',
+                    total_debito=valor,
+                    total_credito=valor,
+                    usuario_creador=self.usuario
+                )
+                
+                # Débito: Costo de Ventas (aumenta costo)
+                DetalleComprobante.objects.create(
+                    comprobante=comprobante,
+                    cuenta=cuenta_costo,
+                    descripcion=f'Costo salida: {self.producto.nombre} ({self.cantidad} unidades)',
+                    debito=valor,
+                    credito=Decimal('0.00'),
+                    orden=1
+                )
+                
+                # Crédito: Inventario (disminuye activo)
+                DetalleComprobante.objects.create(
+                    comprobante=comprobante,
+                    cuenta=cuenta_inventario,
+                    descripcion=f'Salida: {self.producto.nombre}',
+                    debito=Decimal('0.00'),
+                    credito=valor,
+                    orden=2
+                )
+            
+            # Aprobar el comprobante automáticamente
+            comprobante.estado = 'APROBADO'
+            comprobante.save()
+            
+        except Exception as e:
+            # Log del error pero no interrumpir el guardado del movimiento
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error al generar comprobante contable para movimiento de inventario: {e}')

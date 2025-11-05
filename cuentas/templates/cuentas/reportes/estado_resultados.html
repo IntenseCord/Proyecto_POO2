@@ -1,8 +1,11 @@
-{% extends 'base.html' %} {% block title %}Estado de Resultados{% endblock %} {%
-block page_title %}Estado de Resultados{% endblock %} {% block extra_css %} {%
-include 'cuentas/reportes/_estilos_reporte.html' with
-btn_gradient='linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
-hover_shadow='rgba(17, 153, 142, 0.3)' %}
+{% extends 'base.html' %}
+
+{% block title %}Estado de Resultados{% endblock %}
+
+{% block page_title %}Estado de Resultados{% endblock %}
+
+{% block extra_css %}
+{% include 'cuentas/reportes/_estilos_reporte.html' with btn_gradient='linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' hover_shadow='rgba(17, 153, 142, 0.3)' %}
 
 <style>
   .subtotal {
@@ -58,11 +61,13 @@ hover_shadow='rgba(17, 153, 142, 0.3)' %}
     color: #721c24;
   }
 </style>
-{% endblock %} {% block content %} {% include
-'cuentas/reportes/_filtros_reporte.html' with btn_icon='fa-chart-line'
-btn_text='Generar Reporte' %} {% if reporte %} {% include
-'cuentas/reportes/_encabezado_reporte.html' with titulo='Estado de Resultados'
-mostrar_badge=True %}
+{% endblock %}
+
+{% block content %}
+{% include 'cuentas/reportes/_filtros_reporte.html' with btn_icon='fa-chart-line' btn_text='Generar Reporte' %}
+
+{% if reporte %}
+{% include 'cuentas/reportes/_encabezado_reporte.html' with titulo='Estado de Resultados' mostrar_badge=True %}
 
 <!-- Ingresos -->
 <div class="seccion-reporte">
@@ -123,4 +128,6 @@ mostrar_badge=True %}
   </div>
   <div class="monto">${{ reporte.totales.utilidad_neta|floatformat:2 }}</div>
 </div>
-{% endif %} {% endblock %}
+
+{% endif %}
+{% endblock %}

@@ -333,6 +333,50 @@ class BalanceGeneral(ReporteFinanciero):
                 })
                 total_activos += saldo
         
+        # INTEGRACIÓN CON INVENTARIO: Solo agregar si NO hay movimientos contables
+        try:
+            from inventario.models import Producto
+            
+            # Verificar si ya existe la cuenta de inventario en los activos (por movimientos contables)
+            cuenta_inventario_existe = any(a['codigo'] == '1105' for a in activos)
+            
+            # Solo agregar inventario físico si NO hay registro contable
+            if not cuenta_inventario_existe:
+                productos_activos = Producto.objects.filter(estado='activo')
+                valor_inventario = sum([p.cantidad * p.precio_unitario for p in productos_activos])
+                
+                if valor_inventario > 0:
+                    # Buscar o crear cuenta de inventario
+                    cuenta_inventario, created = Cuenta.objects.get_or_create(
+                        empresa=self.empresa,
+                        codigo='1105',
+                        defaults={
+                            'nombre': 'Inventario de Mercancías',
+                            'tipo': TipoCuenta.ACTIVO,
+                            'naturaleza': 'DEBITO',
+                            'acepta_movimiento': True,
+                            'esta_activa': True,
+                            'nivel': 2
+                        }
+                    )
+                    
+                    # Agregar entrada para inventario físico (solo si no hay contable)
+                    activos.append({
+                        'cuenta': cuenta_inventario,
+                        'codigo': cuenta_inventario.codigo,
+                        'nombre': cuenta_inventario.nombre + ' (Físico)',
+                        'monto': Decimal(str(valor_inventario))
+                    })
+                    total_activos += Decimal(str(valor_inventario))
+        except ImportError:
+            # El módulo de inventario no está disponible
+            pass
+        except Exception as e:
+            # Log del error pero no interrumpir el reporte
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f'Error al calcular inventario para balance general: {e}')
+        
         # Calcular Pasivos
         pasivos = []
         total_pasivos = Decimal('0.00')

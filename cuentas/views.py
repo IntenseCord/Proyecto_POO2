@@ -492,6 +492,19 @@ def balance_general_view(request):
         messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
         return render(request, 'cuentas/reportes/balance_general.html', {'reporte': None, 'empresa': None})
     
+    # Verificar si la empresa tiene cuentas contables
+    cuentas_count = Cuenta.objects.filter(empresa=empresa).count()
+    if cuentas_count == 0:
+        # Inicializar plan de cuentas automáticamente
+        try:
+            from django.core.management import call_command
+            from io import StringIO
+            out = StringIO()
+            call_command('init_plan_cuentas', empresa=empresa.id, force=True, stdout=out)
+            messages.success(request, f'Plan de cuentas inicializado automáticamente con {Cuenta.objects.filter(empresa=empresa).count()} cuentas básicas.')
+        except Exception as e:
+            messages.warning(request, f'No se pudo inicializar el plan de cuentas automáticamente. Por favor, crea las cuentas manualmente.')
+    
     # Si hay parámetros de fecha, generar el reporte
     if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
         fecha_inicio = request.GET.get('fecha_inicio')
