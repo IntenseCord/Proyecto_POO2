@@ -14,6 +14,12 @@ DETALLE_CUENTA_URL = 'cuentas:detalle_cuenta'
 ERROR_EMPRESA_NO_ENCONTRADA = 'Empresa no encontrada.'
 ERROR_FORMATO_FECHA_INVALIDO = 'Formato de fecha inválido.'
 
+def obtener_empresa_unica():
+    try:
+        return Empresa.objects.filter(activo=True).order_by('id').first()
+    except Exception:
+        return None
+
 @login_required
 @never_cache
 @require_GET
@@ -202,6 +208,8 @@ def reportes_menu(request):
     from login.utils import obtener_empresa_usuario
     
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     context = {
         'empresa': empresa,
@@ -221,6 +229,8 @@ def balance_comprobacion_view(request):
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
@@ -281,6 +291,8 @@ def balance_comprobacion_pdf(request):
     from io import BytesIO
     
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada.')
@@ -446,6 +458,8 @@ def estado_resultados_view(request):
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
@@ -487,6 +501,8 @@ def balance_general_view(request):
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada. Contacta al administrador.')
@@ -542,6 +558,8 @@ def balance_general_pdf(request):
     from django.http import FileResponse
     
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada.')
@@ -584,6 +602,8 @@ def balance_general_excel(request):
     from django.http import HttpResponse
     
     empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
     
     if not empresa:
         messages.error(request, 'No tienes una empresa asignada.')

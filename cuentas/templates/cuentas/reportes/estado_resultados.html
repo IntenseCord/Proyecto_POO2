@@ -72,18 +72,13 @@
 <!-- Ingresos -->
 <div class="seccion-reporte">
   <h3><i class="fas fa-arrow-up" style="color: #38ef7d"></i> Ingresos</h3>
-  {% include 'cuentas/reportes/_lista_cuentas.html' with
-  cuentas=reporte.ingresos mensaje_vacio='No hay ingresos en el período'
-  mostrar_total=True label_total='Total Ingresos'
-  valor_total=reporte.totales.ingresos %}
+  {% include 'cuentas/reportes/_lista_cuentas.html' with cuentas=reporte.ingresos mensaje_vacio='No hay ingresos en el período' mostrar_total=True label_total='Total Ingresos' valor_total=reporte.totales.ingresos %}
 </div>
 
 <!-- Costos -->
 <div class="seccion-reporte">
   <h3><i class="fas fa-minus-circle" style="color: #f5576c"></i> Costos</h3>
-  {% include 'cuentas/reportes/_lista_cuentas.html' with cuentas=reporte.costos
-  mensaje_vacio='No hay costos en el período' mostrar_total=True
-  label_total='Total Costos' valor_total=reporte.totales.costos %}
+  {% include 'cuentas/reportes/_lista_cuentas.html' with cuentas=reporte.costos mensaje_vacio='No hay costos en el período' mostrar_total=True label_total='Total Costos' valor_total=reporte.totales.costos %}
 
   <div
     class="subtotal"
@@ -109,9 +104,7 @@
     <i class="fas fa-arrow-down" style="color: #f093fb"></i> Gastos
     Operacionales
   </h3>
-  {% include 'cuentas/reportes/_lista_cuentas.html' with cuentas=reporte.gastos
-  mensaje_vacio='No hay gastos en el período' mostrar_total=True
-  label_total='Total Gastos' valor_total=reporte.totales.gastos %}
+  {% include 'cuentas/reportes/_lista_cuentas.html' with cuentas=reporte.gastos mensaje_vacio='No hay gastos en el período' mostrar_total=True label_total='Total Gastos' valor_total=reporte.totales.gastos %}
 </div>
 
 <!-- Resultado Final -->

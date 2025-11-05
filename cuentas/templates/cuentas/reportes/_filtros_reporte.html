@@ -12,15 +12,17 @@ Parámetros:
   </h3>
   <form method="GET">
     <div class="form-row">
+      {% if empresas and empresas|length > 1 %}
       <div class="form-group">
-        <label for="empresa_id">Empresa *</label>
-        <select name="empresa_id" id="empresa_id" class="form-control" required>
+        <label for="empresa_id">Empresa</label>
+        <select name="empresa_id" id="empresa_id" class="form-control">
           <option value="">Seleccione una empresa</option>
           {% for empresa in empresas %}
           <option value="{{ empresa.id }}">{{ empresa.nombre }}</option>
           {% endfor %}
         </select>
       </div>
+      {% endif %}
 
       <div class="form-group">
         <label for="fecha_inicio">Fecha Inicio</label>
