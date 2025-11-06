@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load l10n %}
 {% block title %}Crear Factura de Venta{% endblock %}
 {% block page_title %}Crear Factura de Venta{% endblock %}
 
@@ -67,13 +68,13 @@
         <select name="item_producto_${index}" class="form-control" required onchange="onProductoChange(${index}, this)">
           <option value="">Seleccione un producto...</option>
           {% for p in productos %}
-          <option value="{{ p.id }}" data-precio="{{ p.precio_venta }}">{{ p.codigo }} - {{ p.nombre }} (Stock: {{ p.cantidad }})</option>
+          <option value="{{ p.id }}" data-precio="{{ p.precio_venta|unlocalize }}">{{ p.codigo }} - {{ p.nombre }} (Stock: {{ p.cantidad }})</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-3">
         <label class="form-label">Cantidad</label>
-        <input type="number" min="1" step="1" name="item_cantidad_${index}" class="form-control" required oninput="recalcular(${index})" />
+        <input type="number" min="1" step="1" name="item_cantidad_${index}" class="form-control" required value="1" oninput="recalcular(${index})" />
       </div>
       <div class="col-md-3">
         <label class="form-label">Precio de Venta</label>
@@ -85,6 +86,8 @@
 
     container.appendChild(row);
     document.getElementById('items_count').value = container.children.length;
+    // calcular totales iniciales con cantidad por defecto
+    recalcular(index);
   }
 
   function formatoMoneda(v) {
@@ -98,6 +101,11 @@
       const precioInput = document.querySelector(`[name="item_precio_${index}"]`);
       if (precioInput) {
         precioInput.value = precioData;
+        // si cantidad no se ha definido, establecer 1
+        const qtyInput = document.querySelector(`[name="item_cantidad_${index}"]`);
+        if (qtyInput && (!qtyInput.value || parseFloat(qtyInput.value) <= 0)) {
+          qtyInput.value = 1;
+        }
         recalcular(index);
       }
     }

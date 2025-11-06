@@ -9,7 +9,7 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 from empresa.models import Empresa
 from cuentas.models import Cuenta
-from .models import Comprobante, DetalleComprobante
+from .models import Comprobante, DetalleComprobante, TipoComprobante
 
 # Constantes para evitar duplicación
 ERROR_CUENTAS_NO_ENCONTRADAS = "No se encontraron las cuentas contables necesarias"
@@ -83,8 +83,9 @@ class DocumentoContable(ABC):
         
         # 5. Crear los detalles del asiento
         self.crear_detalles_asiento(comprobante, cuentas, totales)
-        
-        # 6. Validar partida doble
+
+        # 6. Calcular totales del comprobante y validar partida doble
+        comprobante.calcular_totales()
         if comprobante.esta_balanceado():
             comprobante.estado = 'APROBADO'
             comprobante.save()
@@ -184,8 +185,9 @@ class FacturaVenta(DocumentoContable):
     def calcular_totales(self):
         """Calcula los totales de la factura"""
         subtotal = sum(item['subtotal'] for item in self.items)
-        iva = subtotal * Decimal('0.19')  # 19% IVA
-        total = subtotal + iva
+        # Ventas sin IVA por requerimiento
+        iva = Decimal('0.00')
+        total = subtotal
         
         return {
             'subtotal': subtotal,
@@ -194,7 +196,7 @@ class FacturaVenta(DocumentoContable):
         }
     
     def obtener_tipo_comprobante(self):
-        return 'INGRESO'
+        return TipoComprobante.INGRESO
     
     def crear_detalles_asiento(self, comprobante, cuentas, totales):
         """
@@ -278,7 +280,7 @@ class NotaCredito(DocumentoContable):
         }
     
     def obtener_tipo_comprobante(self):
-        return 'EGRESO'
+        return TipoComprobante.EGRESO
     
     def crear_detalles_asiento(self, comprobante, cuentas, totales):
         """

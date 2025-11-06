@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Detalle de Comprobante{% endblock %}
+{% block page_title %}Detalle de Comprobante{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="mb-0">{{ comprobante.get_tipo_display }} - {{ comprobante.numero }}</h5>
+        <small class="text-muted">Fecha: {{ comprobante.fecha|date:'d/m/Y' }} | Estado: {{ comprobante.estado }}</small>
+      </div>
+      <div>
+        <a href="{% url 'transacciones:lista_comprobantes' %}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <strong>Empresa:</strong> {{ comprobante.empresa.nombre }}<br/>
+      <strong>Descripción:</strong> {{ comprobante.descripcion|default:'—' }}
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-striped">
+        <thead class="table-light">
+          <tr>
+            <th style="width:120px">Código</th>
+            <th>Cuenta</th>
+            <th style="width:140px" class="text-end">Débito</th>
+            <th style="width:140px" class="text-end">Crédito</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in detalles %}
+          <tr>
+            <td>{{ d.cuenta.codigo }}</td>
+            <td>
+              <div>{{ d.cuenta.nombre }}</div>
+              {% if d.descripcion %}
+              <small class="text-muted">{{ d.descripcion }}</small>
+              {% endif %}
+            </td>
+            <td class="text-end">${{ d.debito|floatformat:2 }}</td>
+            <td class="text-end">${{ d.credito|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted">Sin movimientos</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-light">
+            <th colspan="2" class="text-end">Totales</th>
+            <th class="text-end">${{ comprobante.total_debito|floatformat:2 }}</th>
+            <th class="text-end">${{ comprobante.total_credito|floatformat:2 }}</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
