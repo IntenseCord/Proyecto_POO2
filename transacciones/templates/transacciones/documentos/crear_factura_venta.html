@@ -96,7 +96,7 @@
   }
 
   function onProductoChange(index, selectEl) {
-    const precioData = selectEl.options[selectEl.selectedIndex]?.getAttribute('data-precio');
+    const precioData = selectEl.options[selectEl.selectedIndex]?.dataset?.precio;
     if (precioData) {
       const precioInput = document.querySelector(`[name="item_precio_${index}"]`);
       if (precioInput) {
