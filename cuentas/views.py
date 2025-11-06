@@ -493,6 +493,117 @@ def estado_resultados_view(request):
 @login_required
 @never_cache
 @require_GET
+def estado_resultados_pdf(request):
+    """Exporta el Estado de Resultados a PDF"""
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    from .reportes import EstadoResultados
+    from datetime import datetime
+    from login.utils import obtener_empresa_usuario
+    from io import BytesIO
+    
+    empresa = obtener_empresa_usuario(request.user)
+    if not empresa:
+        empresa = obtener_empresa_unica()
+    
+    if not empresa:
+        messages.error(request, 'No tienes una empresa asignada.')
+        return redirect('cuentas:estado_resultados')
+    
+    # Parámetros de fecha
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    try:
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
+    except (ValueError, TypeError):
+        fecha_inicio_obj = None
+        fecha_fin_obj = None
+    
+    # Generar reporte
+    reporte = EstadoResultados(empresa, fecha_inicio_obj, fecha_fin_obj)
+    data = reporte.generar()
+    
+    # Crear PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.6*inch, bottomMargin=0.6*inch, rightMargin=0.6*inch, leftMargin=0.6*inch)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#2c3e50'), spaceAfter=8, alignment=TA_CENTER)
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#7f8c8d'), spaceAfter=14, alignment=TA_CENTER)
+    section_header = ParagraphStyle('Section', parent=styles['Heading3'], fontSize=12, textColor=colors.HexColor('#2c3e50'), spaceAfter=6)
+    right = ParagraphStyle('Right', parent=styles['Normal'], alignment=TA_RIGHT)
+    
+    # Encabezado
+    elements.append(Paragraph(f"<b>{empresa.nombre}</b>", title_style))
+    elements.append(Paragraph("Estado de Resultados", title_style))
+    periodo = ""
+    if fecha_inicio_obj and fecha_fin_obj:
+        periodo = f"Del {fecha_inicio_obj.strftime('%d/%m/%Y')} al {fecha_fin_obj.strftime('%d/%m/%Y')}"
+    elif fecha_inicio_obj:
+        periodo = f"Desde {fecha_inicio_obj.strftime('%d/%m/%Y')}"
+    elif fecha_fin_obj:
+        periodo = f"Hasta {fecha_fin_obj.strftime('%d/%m/%Y')}"
+    else:
+        periodo = "Todos los períodos"
+    elements.append(Paragraph(periodo, subtitle_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Helper para construir tabla simple de cuentas
+    def tabla_cuentas(titulo, lista, total_label, total_valor):
+        elements.append(Paragraph(titulo, section_header))
+        data_tbl = [["Código", "Cuenta", "Monto"]]
+        for c in lista:
+            data_tbl.append([c['codigo'], c['nombre'][:50], f"${c['monto']:,.2f}"])
+        if not lista:
+            data_tbl.append(["", "Sin registros", "$0,00"])  # placeholder
+        # Fila total
+        data_tbl.append(["", total_label, f"${total_valor:,.2f}"])
+        t = Table(data_tbl, colWidths=[1.1*inch, 3.4*inch, 1.2*inch])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f8f9fa')),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('ALIGN', (-1,1), (-1,-1), 'RIGHT'),
+            ('GRID', (0,0), (-1,-1), 0.25, colors.HexColor('#e9ecef')),
+            ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#667eea')),
+            ('TEXTCOLOR', (0,-1), (-1,-1), colors.white),
+            ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 0.15*inch))
+    
+    # Ingresos, Costos, Gastos
+    tabla_cuentas("Ingresos", data['ingresos'], "Total Ingresos", data['totales']['ingresos'])
+    tabla_cuentas("Costos", data['costos'], "Total Costos", data['totales']['costos'])
+    # Subtotal utilidad bruta
+    elements.append(Paragraph(f"<b>Utilidad Bruta:</b> ${data['totales']['utilidad_bruta']:,.2f}", right))
+    elements.append(Spacer(1, 0.15*inch))
+    tabla_cuentas("Gastos", data['gastos'], "Total Gastos", data['totales']['gastos'])
+    
+    # Resultado final
+    resultado = data['totales']['utilidad_neta']
+    resultado_texto = "Utilidad Neta" if resultado >= 0 else "Pérdida Neta"
+    elements.append(Spacer(1, 0.2*inch))
+    elements.append(Paragraph(f"<b>{resultado_texto}:</b> ${resultado:,.2f}", title_style))
+    
+    # Construir PDF
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    filename = f"estado_resultados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+@never_cache
+@require_GET
 def balance_general_view(request):
     """Vista para el Balance General"""
     from .reportes import BalanceGeneral

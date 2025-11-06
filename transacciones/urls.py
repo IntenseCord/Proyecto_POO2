@@ -11,4 +11,7 @@ urlpatterns = [
     path('<int:comprobante_id>/aprobar/', views.aprobar_comprobante, name='aprobar_comprobante'),
     path('<int:comprobante_id>/anular/', views.anular_comprobante, name='anular_comprobante'),
     path('<int:comprobante_id>/eliminar/', views.eliminar_comprobante, name='eliminar_comprobante'),
+    
+    # Documentos contables (Ventas, Notas, Recibos)
+    path('documentos/venta/crear/', views.crear_factura_venta, name='crear_factura_venta'),
 ]

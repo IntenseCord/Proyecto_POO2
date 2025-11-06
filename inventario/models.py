@@ -38,6 +38,13 @@ class Producto(models.Model):
         validators=[MinValueValidator(Decimal('0.01'))],
         help_text="Precio por unidad"
     )
+    precio_venta = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Precio de venta por unidad",
+        default=Decimal('0.01')
+    )
     stock_minimo = models.IntegerField(
         default=5,
         validators=[MinValueValidator(0)],

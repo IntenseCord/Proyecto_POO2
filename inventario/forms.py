@@ -5,7 +5,7 @@ class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
         fields = ['codigo', 'nombre', 'descripcion', 'categoria', 'cantidad', 
-                 'precio_unitario', 'stock_minimo', 'estado']
+                 'precio_unitario', 'precio_venta', 'stock_minimo', 'estado']
         widgets = {
             'codigo': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -32,6 +32,11 @@ class ProductoForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0.01'
             }),
+            'precio_venta': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01'
+            }),
             'stock_minimo': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '0'
@@ -46,7 +51,8 @@ class ProductoForm(forms.ModelForm):
             'descripcion': 'Descripción',
             'categoria': 'Categoría',
             'cantidad': 'Cantidad en Stock',
-            'precio_unitario': 'Precio Unitario ($)',
+            'precio_unitario': 'Costo Unitario ($)',
+            'precio_venta': 'Precio de Venta ($)',
             'stock_minimo': 'Stock Mínimo',
             'estado': 'Estado',
         }

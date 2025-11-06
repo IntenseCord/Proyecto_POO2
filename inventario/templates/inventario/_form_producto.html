@@ -41,6 +41,23 @@ crear como en editar producto {% endcomment %}
     </div>
   </div>
 
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <label for="{{ form.precio_venta.id_for_label }}" class="form-label">
+        {{ form.precio_venta.label }} <span class="text-danger">*</span>
+      </label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        {{ form.precio_venta }}
+      </div>
+      {% if form.precio_venta.errors %}
+      <div class="invalid-feedback d-block">
+        {% for error in form.precio_venta.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="mb-3">
     <label for="{{ form.nombre.id_for_label }}" class="form-label">
       {{ form.nombre.label }} <span class="text-danger">*</span>

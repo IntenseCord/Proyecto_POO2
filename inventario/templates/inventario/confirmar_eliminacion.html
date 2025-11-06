@@ -16,15 +16,22 @@
   </li>
   <li class="breadcrumb-item active">Confirmar Eliminación</li>
 </ol>
-{% endblock %} {% block page_title %}Confirmar Eliminación{% endblock %} {%
-block page_actions %}
+{% endblock %}
+
+{% block page_title %}
+Confirmar Eliminación
+{% endblock %}
+
+{% block page_actions %}
 <a
   href="{% url 'inventario:detalle_producto' producto.id %}"
   class="btn btn-outline-secondary"
 >
   <i class="fas fa-arrow-left"></i> Cancelar
 </a>
-{% endblock %} {% block inventario_content %}
+{% endblock %}
+
+{% block inventario_content %}
 <div class="row justify-content-center">
   <div class="col-lg-6">
     <div class="card shadow border-warning">
@@ -52,14 +59,15 @@ block page_actions %}
                 <strong>Código:</strong> {{ producto.codigo }}<br />
                 <strong>Nombre:</strong> {{ producto.nombre }}<br />
                 <strong>Categoría:</strong>
-                {% if producto.categoria %} {{ producto.categoria.nombre }} {%
-                else %} Sin categoría {% endif %}
+                {% if producto.categoria %}
+                  {{ producto.categoria.nombre }}
+                {% else %}
+                  Sin categoría
+                {% endif %}
               </div>
               <div class="col-md-6">
                 <strong>Stock actual:</strong> {{ producto.cantidad }}<br />
-                <strong>Precio:</strong> ${{ producto.precio_unitario }}<br />
-                <strong>Valor total:</strong> ${{
-                producto.valor_total|floatformat:2 }}
+                <strong>Precio y valor total:</strong> ${{ producto.precio_unitario }} (Valor total: ${{ producto.valor_total|floatformat:2 }})
               </div>
             </div>
           </div>

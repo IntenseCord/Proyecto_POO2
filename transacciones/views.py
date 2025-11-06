@@ -9,6 +9,8 @@ from django.views.decorators.http import require_http_methods, require_GET, requ
 from .models import Comprobante, DetalleComprobante, TipoComprobante
 from .forms import ComprobanteForm, DetalleComprobanteFormSet, FiltroComprobanteForm
 from empresa.models import Empresa
+from decimal import Decimal
+from inventario.models import Producto, MovimientoInventario
 
 # Constantes para evitar duplicación
 DETALLE_COMPROBANTE_URL = 'transacciones:detalle_comprobante'
@@ -80,6 +82,9 @@ def lista_comprobantes(request):
     
     # Para los filtros
     empresas = Empresa.objects.filter(activo=True)
+    productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
+    productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
+    productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
     
     context = {
         'page_obj': page_obj,
@@ -301,7 +306,10 @@ def crear_factura_venta(request):
     if request.method == 'POST':
         try:
             empresa_id = request.POST.get('empresa')
-            empresa = Empresa.objects.get(id=empresa_id)
+            if empresa_id:
+                empresa = Empresa.objects.get(id=empresa_id)
+            else:
+                empresa = Empresa.objects.filter(activo=True).first()
             
             # Crear la factura usando la clase abstracta
             factura = FacturaVenta(
@@ -316,15 +324,44 @@ def crear_factura_venta(request):
             items_count = int(request.POST.get('items_count', 0))
             # Limitar el número de items para prevenir ataques de inyección
             items_count = min(items_count, MAX_ITEMS_PER_DOCUMENT)
+            # Recorrer ítems: ahora vienen con producto_id, cantidad y precio_venta
+            # Además, se generará una salida de inventario para COSTO DE VENTAS
             for i in range(items_count):
-                descripcion = request.POST.get(f'item_descripcion_{i}')
+                prod_id = request.POST.get(f'item_producto_{i}')
                 cantidad = Decimal(request.POST.get(f'item_cantidad_{i}', 0))
-                precio = Decimal(request.POST.get(f'item_precio_{i}', 0))
-                
-                if descripcion and cantidad > 0 and precio > 0:
-                    factura.agregar_item(descripcion, cantidad, precio)
+                precio_venta = Decimal(request.POST.get(f'item_precio_{i}', 0))
+                if not prod_id:
+                    continue
+                try:
+                    producto = Producto.objects.get(id=prod_id, estado='activo')
+                except Producto.DoesNotExist:
+                    raise ValidationError('Producto inválido en la fila de ítems')
+                if cantidad <= 0:
+                    continue
+                if precio_venta <= 0:
+                    # usar precio de lista configurado en el producto
+                    precio_venta = producto.precio_venta
+
+                # Validar stock suficiente
+                if producto.cantidad < cantidad:
+                    raise ValidationError(f'Stock insuficiente para {producto.nombre}. Disponible: {producto.cantidad}')
+
+                # 1) Registrar ítem de venta (ingreso)
+                factura.agregar_item(f"{producto.codigo} - {producto.nombre}", cantidad, precio_venta)
+
+                # 2) Disminuir stock y crear movimiento de salida para COSTO DE VENTAS
+                producto.cantidad -= int(cantidad)
+                producto.save()
+                MovimientoInventario.objects.create(
+                    producto=producto,
+                    tipo='salida',
+                    cantidad=int(cantidad),
+                    motivo='Venta (salida automática)',
+                    observaciones=f'Factura a {request.POST.get("cliente")}',
+                    usuario=request.user,
+                )
             
-            # Generar el asiento contable automáticamente
+            # Generar el asiento contable automáticamente (INGRESOS)
             comprobante = factura.generar_asiento()
             
             messages.success(request, f'Factura creada exitosamente. Comprobante #{comprobante.numero}')
@@ -333,8 +370,12 @@ def crear_factura_venta(request):
         except Exception as e:
             messages.error(request, f'Error al crear la factura: {str(e)}')
     
+    from datetime import date
+    productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
     context = {
         'empresas': empresas,
+        'today': date.today(),
+        'productos': productos_activos,
     }
     
     return render(request, 'transacciones/documentos/crear_factura_venta.html', context)

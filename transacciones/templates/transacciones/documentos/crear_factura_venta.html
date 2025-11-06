@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Crear Factura de Venta{% endblock %}
+{% block page_title %}Crear Factura de Venta{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Fecha</label>
+          <input type="date" name="fecha" class="form-control" value="{{ today|date:'Y-m-d' }}" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Cliente</label>
+          <input type="text" name="cliente" class="form-control" placeholder="Nombre del cliente" required />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Forma de Pago</label>
+          <select name="forma_pago" class="form-control">
+            <option value="CREDITO">Crédito</option>
+            <option value="CONTADO">Contado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <input type="text" name="descripcion" class="form-control" placeholder="Descripción de la factura" />
+      </div>
+
+      <hr />
+      <h5>Items</h5>
+      <div id="items-container"></div>
+      <div class="mt-3 d-flex justify-content-end">
+        <div>
+          <div class="text-muted" style="font-size: 0.9rem">Subtotal:</div>
+          <div id="subtotal_general" style="font-weight:600; font-size:1.1rem">$0.00</div>
+        </div>
+      </div>
+      <input type="hidden" name="items_count" id="items_count" value="0" />
+
+      <button type="button" class="btn btn-outline-primary" onclick="agregarItem()">
+        <i class="fas fa-plus"></i> Agregar Ítem
+      </button>
+
+      <div class="mt-4 d-flex justify-content-end">
+        <a href="{% url 'inventario:dashboard' %}" class="btn btn-outline-secondary me-2">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Guardar y Generar Asiento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function agregarItem() {
+    const container = document.getElementById('items-container');
+    const index = container.children.length;
+
+    const row = document.createElement('div');
+    row.className = 'row g-2 align-items-end mb-2';
+    row.innerHTML = `
+      <div class="col-md-6">
+        <label class="form-label">Producto</label>
+        <select name="item_producto_${index}" class="form-control" required onchange="onProductoChange(${index}, this)">
+          <option value="">Seleccione un producto...</option>
+          {% for p in productos %}
+          <option value="{{ p.id }}" data-precio="{{ p.precio_venta }}">{{ p.codigo }} - {{ p.nombre }} (Stock: {{ p.cantidad }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cantidad</label>
+        <input type="number" min="1" step="1" name="item_cantidad_${index}" class="form-control" required oninput="recalcular(${index})" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Precio de Venta</label>
+        <input type="number" min="0.01" step="0.01" name="item_precio_${index}" class="form-control" required oninput="recalcular(${index})" />
+      </div>
+      <div class="col-12 text-end text-muted" style="font-size:0.9rem">
+        Subtotal ítem: <span id="subtotal_item_${index}">$0.00</span>
+      </div>`;
+
+    container.appendChild(row);
+    document.getElementById('items_count').value = container.children.length;
+  }
+
+  function formatoMoneda(v) {
+    const n = isNaN(v) ? 0 : Number(v);
+    return n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 2 });
+  }
+
+  function onProductoChange(index, selectEl) {
+    const precioData = selectEl.options[selectEl.selectedIndex]?.getAttribute('data-precio');
+    if (precioData) {
+      const precioInput = document.querySelector(`[name="item_precio_${index}"]`);
+      if (precioInput) {
+        precioInput.value = precioData;
+        recalcular(index);
+      }
+    }
+  }
+
+  function recalcular(index) {
+    const cantidad = parseFloat(document.querySelector(`[name="item_cantidad_${index}"]`)?.value || '0');
+    const precio = parseFloat(document.querySelector(`[name="item_precio_${index}"]`)?.value || '0');
+    const subtotal = cantidad * precio;
+    const span = document.getElementById(`subtotal_item_${index}`);
+    if (span) span.textContent = formatoMoneda(subtotal);
+
+    // Total general
+    const container = document.getElementById('items-container');
+    let total = 0;
+    for (let i = 0; i < container.children.length; i++) {
+      const q = parseFloat(document.querySelector(`[name="item_cantidad_${i}"]`)?.value || '0');
+      const p = parseFloat(document.querySelector(`[name="item_precio_${i}"]`)?.value || '0');
+      total += q * p;
+    }
+    document.getElementById('subtotal_general').textContent = formatoMoneda(total);
+  }
+
+  // crear un primer item por defecto
+  document.addEventListener('DOMContentLoaded', () => agregarItem());
+</script>
+{% endblock %}

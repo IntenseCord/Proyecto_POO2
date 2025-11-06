@@ -69,6 +69,13 @@
 {% if reporte %}
 {% include 'cuentas/reportes/_encabezado_reporte.html' with titulo='Estado de Resultados' mostrar_badge=True %}
 
+<div class="mb-3" style="text-align:right">
+  <a href="{% url 'cuentas:estado_resultados_pdf' %}?fecha_inicio={{ request.GET.fecha_inicio }}&fecha_fin={{ request.GET.fecha_fin }}"
+     class="btn-generar" style="text-decoration:none; display:inline-flex; align-items:center;">
+    <i class="fas fa-file-pdf"></i>&nbsp;Exportar a PDF
+  </a>
+  </div>
+
 <!-- Ingresos -->
 <div class="seccion-reporte">
   <h3><i class="fas fa-arrow-up" style="color: #38ef7d"></i> Ingresos</h3>
