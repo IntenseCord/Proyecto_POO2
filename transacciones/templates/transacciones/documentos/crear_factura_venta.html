@@ -91,7 +91,7 @@
   }
 
   function formatoMoneda(v) {
-    const n = isNaN(v) ? 0 : Number(v);
+    const n = Number.isNaN(Number(v)) ? 0 : Number(v);
     return n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 2 });
   }
 
@@ -103,7 +103,7 @@
         precioInput.value = precioData;
         // si cantidad no se ha definido, establecer 1
         const qtyInput = document.querySelector(`[name="item_cantidad_${index}"]`);
-        if (qtyInput && (!qtyInput.value || parseFloat(qtyInput.value) <= 0)) {
+        if (qtyInput && (!qtyInput.value || Number.parseFloat(qtyInput.value) <= 0)) {
           qtyInput.value = 1;
         }
         recalcular(index);
@@ -112,8 +112,8 @@
   }
 
   function recalcular(index) {
-    const cantidad = parseFloat(document.querySelector(`[name="item_cantidad_${index}"]`)?.value || '0');
-    const precio = parseFloat(document.querySelector(`[name="item_precio_${index}"]`)?.value || '0');
+    const cantidad = Number.parseFloat(document.querySelector(`[name="item_cantidad_${index}"]`)?.value || '0');
+    const precio = Number.parseFloat(document.querySelector(`[name="item_precio_${index}"]`)?.value || '0');
     const subtotal = cantidad * precio;
     const span = document.getElementById(`subtotal_item_${index}`);
     if (span) span.textContent = formatoMoneda(subtotal);
@@ -122,8 +122,8 @@
     const container = document.getElementById('items-container');
     let total = 0;
     for (let i = 0; i < container.children.length; i++) {
-      const q = parseFloat(document.querySelector(`[name="item_cantidad_${i}"]`)?.value || '0');
-      const p = parseFloat(document.querySelector(`[name="item_precio_${i}"]`)?.value || '0');
+      const q = Number.parseFloat(document.querySelector(`[name="item_cantidad_${i}"]`)?.value || '0');
+      const p = Number.parseFloat(document.querySelector(`[name="item_precio_${i}"]`)?.value || '0');
       total += q * p;
     }
     document.getElementById('subtotal_general').textContent = formatoMoneda(total);
