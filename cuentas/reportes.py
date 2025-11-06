@@ -288,169 +288,43 @@ class BalanceGeneral(ReporteFinanciero):
         Retorna activos, pasivos, patrimonio y verifica la ecuación contable.
         """
         movimientos = self.obtener_movimientos()
-        
-        # Obtener cuentas de Activos
+
         cuentas_activo = Cuenta.objects.filter(
-            empresa=self.empresa,
-            tipo=TipoCuenta.ACTIVO,
-            esta_activa=True
+            empresa=self.empresa, tipo=TipoCuenta.ACTIVO, esta_activa=True
         ).order_by('codigo')
-        
-        # Obtener cuentas de Pasivos
         cuentas_pasivo = Cuenta.objects.filter(
-            empresa=self.empresa,
-            tipo=TipoCuenta.PASIVO,
-            esta_activa=True
+            empresa=self.empresa, tipo=TipoCuenta.PASIVO, esta_activa=True
         ).order_by('codigo')
-        
-        # Obtener cuentas de Patrimonio
         cuentas_patrimonio = Cuenta.objects.filter(
-            empresa=self.empresa,
-            tipo=TipoCuenta.PATRIMONIO,
-            esta_activa=True
+            empresa=self.empresa, tipo=TipoCuenta.PATRIMONIO, esta_activa=True
         ).order_by('codigo')
-        
-        # Calcular Activos
-        activos = []
-        total_activos = Decimal('0.00')
-        
-        for cuenta in cuentas_activo:
-            movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
-                debito=Sum('debito'),
-                credito=Sum('credito')
-            )
-            
-            debito = movimientos_cuenta['debito'] or Decimal('0.00')
-            credito = movimientos_cuenta['credito'] or Decimal('0.00')
-            saldo = debito - credito  # Los activos tienen naturaleza débito
-            
-            if saldo != 0:
-                activos.append({
-                    'cuenta': cuenta,
-                    'codigo': cuenta.codigo,
-                    'nombre': cuenta.nombre,
-                    'monto': saldo
-                })
-                total_activos += saldo
-        
-        # INTEGRACIÓN CON INVENTARIO: Solo agregar si NO hay movimientos contables
-        try:
-            from inventario.models import Producto
-            
-            # Verificar si ya existe la cuenta de inventario en los activos (por movimientos contables)
-            cuenta_inventario_existe = any(a['codigo'] == '1105' for a in activos)
-            
-            # Solo agregar inventario físico si NO hay registro contable
-            if not cuenta_inventario_existe:
-                productos_activos = Producto.objects.filter(estado='activo')
-                valor_inventario = sum([p.cantidad * p.precio_unitario for p in productos_activos])
-                
-                if valor_inventario > 0:
-                    # Buscar o crear cuenta de inventario
-                    cuenta_inventario, created = Cuenta.objects.get_or_create(
-                        empresa=self.empresa,
-                        codigo='1105',
-                        defaults={
-                            'nombre': 'Inventario de Mercancías',
-                            'tipo': TipoCuenta.ACTIVO,
-                            'naturaleza': 'DEBITO',
-                            'acepta_movimiento': True,
-                            'esta_activa': True,
-                            'nivel': 2
-                        }
-                    )
-                    
-                    # Agregar entrada para inventario físico (solo si no hay contable)
-                    activos.append({
-                        'cuenta': cuenta_inventario,
-                        'codigo': cuenta_inventario.codigo,
-                        'nombre': cuenta_inventario.nombre + ' (Físico)',
-                        'monto': Decimal(str(valor_inventario))
-                    })
-                    total_activos += Decimal(str(valor_inventario))
-        except ImportError:
-            # El módulo de inventario no está disponible
-            pass
-        except Exception as e:
-            # Log del error pero no interrumpir el reporte
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f'Error al calcular inventario para balance general: {e}')
-        
-        # Calcular Pasivos
-        pasivos = []
-        total_pasivos = Decimal('0.00')
-        
-        for cuenta in cuentas_pasivo:
-            movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
-                debito=Sum('debito'),
-                credito=Sum('credito')
-            )
-            
-            debito = movimientos_cuenta['debito'] or Decimal('0.00')
-            credito = movimientos_cuenta['credito'] or Decimal('0.00')
-            saldo = credito - debito  # Los pasivos tienen naturaleza crédito
-            
-            if saldo != 0:
-                pasivos.append({
-                    'cuenta': cuenta,
-                    'codigo': cuenta.codigo,
-                    'nombre': cuenta.nombre,
-                    'monto': saldo
-                })
-                total_pasivos += saldo
-        
-        # Calcular Patrimonio
-        patrimonios = []
-        total_patrimonio = Decimal('0.00')
-        
-        for cuenta in cuentas_patrimonio:
-            movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
-                debito=Sum('debito'),
-                credito=Sum('credito')
-            )
-            
-            debito = movimientos_cuenta['debito'] or Decimal('0.00')
-            credito = movimientos_cuenta['credito'] or Decimal('0.00')
-            saldo = credito - debito  # El patrimonio tiene naturaleza crédito
-            
-            if saldo != 0:
-                patrimonios.append({
-                    'cuenta': cuenta,
-                    'codigo': cuenta.codigo,
-                    'nombre': cuenta.nombre,
-                    'monto': saldo
-                })
-                total_patrimonio += saldo
-        
-        # Calcular utilidad del período (si aplica)
-        estado_resultados = EstadoResultados(self.empresa, self.fecha_inicio, self.fecha_fin)
-        resultado = estado_resultados.generar()
-        utilidad_periodo = resultado['totales']['utilidad_neta']
-        
-        # El patrimonio total incluye la utilidad del período
+
+        activos, total_activos = self._agrupar_por_tipo(movimientos, cuentas_activo, 'DEBITO')
+        activos, total_activos = self._integrar_inventario(activos, total_activos)
+        pasivos, total_pasivos = self._agrupar_por_tipo(movimientos, cuentas_pasivo, 'CREDITO')
+        patrimonios, total_patrimonio = self._agrupar_por_tipo(movimientos, cuentas_patrimonio, 'CREDITO')
+
+        utilidad_periodo = self._obtener_utilidad_periodo()
         total_patrimonio_con_utilidad = total_patrimonio + utilidad_periodo
-        
-        # Verificar ecuación contable: Activos = Pasivos + Patrimonio
+
         total_pasivo_patrimonio = total_pasivos + total_patrimonio_con_utilidad
         ecuacion_balanceada = abs(total_activos - total_pasivo_patrimonio) < Decimal('0.01')
-        
-        # Clasificar activos y pasivos
+
         activos_clasificados = self._clasificar_activos(activos)
         pasivos_clasificados = self._clasificar_pasivos(pasivos)
-        
-        # Calcular ratios financieros
+
         ratios = self._calcular_ratios_financieros(
-            activos_clasificados, 
-            pasivos_clasificados, 
-            total_activos, 
-            total_pasivos, 
-            total_patrimonio_con_utilidad
+            activos_clasificados,
+            pasivos_clasificados,
+            total_activos,
+            total_pasivos,
+            total_patrimonio_con_utilidad,
         )
-        
-        # Preparar datos para gráficos
-        datos_graficos = self._preparar_datos_graficos(activos, pasivos, patrimonios, total_activos, total_pasivos, total_patrimonio_con_utilidad)
-        
+
+        datos_graficos = self._preparar_datos_graficos(
+            activos, pasivos, patrimonios, total_activos, total_pasivos, total_patrimonio_con_utilidad
+        )
+
         return {
             'empresa': self.empresa,
             'fecha_inicio': self.fecha_inicio,
@@ -473,6 +347,65 @@ class BalanceGeneral(ReporteFinanciero):
             'ratios': ratios,
             'datos_graficos': datos_graficos,
         }
+
+    def _agrupar_por_tipo(self, movimientos, cuentas_qs, naturaleza):
+        """Crea la lista de cuentas y total según naturaleza 'DEBITO' o 'CREDITO'."""
+        lista = []
+        total = Decimal('0.00')
+        for cuenta in cuentas_qs:
+            movs = movimientos.filter(cuenta=cuenta).aggregate(
+                debito=Sum('debito'), credito=Sum('credito')
+            )
+            debito = movs['debito'] or Decimal('0.00')
+            credito = movs['credito'] or Decimal('0.00')
+            saldo = (debito - credito) if naturaleza == 'DEBITO' else (credito - debito)
+            if saldo != 0:
+                lista.append({'cuenta': cuenta, 'codigo': cuenta.codigo, 'nombre': cuenta.nombre, 'monto': saldo})
+                total += saldo
+        return lista, total
+
+    def _integrar_inventario(self, activos, total_activos):
+        """Integra inventario físico si no hay registro contable en activos."""
+        try:
+            from inventario.models import Producto
+            cuenta_inventario_existe = any(a['codigo'] == '1105' for a in activos)
+            if not cuenta_inventario_existe:
+                productos_activos = Producto.objects.filter(estado='activo')
+                valor_inventario = sum([p.cantidad * p.precio_unitario for p in productos_activos])
+                if valor_inventario > 0:
+                    cuenta_inventario, _ = Cuenta.objects.get_or_create(
+                        empresa=self.empresa,
+                        codigo='1105',
+                        defaults={
+                            'nombre': 'Inventario de Mercancías',
+                            'tipo': TipoCuenta.ACTIVO,
+                            'naturaleza': 'DEBITO',
+                            'acepta_movimiento': True,
+                            'esta_activa': True,
+                            'nivel': 2,
+                        },
+                    )
+                    activos.append({
+                        'cuenta': cuenta_inventario,
+                        'codigo': cuenta_inventario.codigo,
+                        'nombre': cuenta_inventario.nombre + ' (Físico)',
+                        'monto': Decimal(str(valor_inventario)),
+                    })
+                    total_activos += Decimal(str(valor_inventario))
+        except ImportError:
+            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                f'Error al calcular inventario para balance general: {e}'
+            )
+        return activos, total_activos
+
+    def _obtener_utilidad_periodo(self):
+        """Calcula la utilidad neta del período desde el Estado de Resultados."""
+        estado_resultados = EstadoResultados(self.empresa, self.fecha_inicio, self.fecha_fin)
+        resultado = estado_resultados.generar()
+        return resultado['totales']['utilidad_neta']
     
     def _clasificar_activos(self, activos):
         """Clasifica los activos en corrientes y no corrientes"""

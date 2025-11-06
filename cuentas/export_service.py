@@ -4,6 +4,10 @@ Servicio de exportación de reportes contables a PDF y Excel
 from decimal import Decimal
 from datetime import datetime
 
+# Constantes reutilizables
+HEADER_CODIGO = 'Código'
+CURRENCY_FORMAT = '$#,##0.00'
+
 
 class ExportadorReportes:
     """Clase base para exportación de reportes"""
@@ -75,7 +79,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
             
             # ACTIVOS
             elements.append(Paragraph("<b>ACTIVOS</b>", styles['Heading2']))
-            activos_data = [['Código', 'Cuenta', 'Monto']]
+            activos_data = [[HEADER_CODIGO, 'Cuenta', 'Monto']]
             for activo in self.reporte_data.get('activos', []):
                 activos_data.append([
                     activo['codigo'],
@@ -104,7 +108,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
             
             # PASIVOS
             elements.append(Paragraph("<b>PASIVOS</b>", styles['Heading2']))
-            pasivos_data = [['Código', 'Cuenta', 'Monto']]
+            pasivos_data = [[HEADER_CODIGO, 'Cuenta', 'Monto']]
             for pasivo in self.reporte_data.get('pasivos', []):
                 pasivos_data.append([
                     pasivo['codigo'],
@@ -133,7 +137,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
             
             # PATRIMONIO
             elements.append(Paragraph("<b>PATRIMONIO</b>", styles['Heading2']))
-            patrimonio_data = [['Código', 'Cuenta', 'Monto']]
+            patrimonio_data = [[HEADER_CODIGO, 'Cuenta', 'Monto']]
             for patrimonio in self.reporte_data.get('patrimonios', []):
                 patrimonio_data.append([
                     patrimonio['codigo'],
@@ -254,7 +258,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
             ws[f'A{row}'].font = Font(name='Arial', size=12, bold=True)
             row += 1
             
-            ws[f'A{row}'] = 'Código'
+            ws[f'A{row}'] = HEADER_CODIGO
             ws[f'B{row}'] = 'Cuenta'
             ws[f'C{row}'] = 'Monto'
             for col in ['A', 'B', 'C']:
@@ -267,13 +271,13 @@ class ExportadorBalanceGeneral(ExportadorReportes):
                 ws[f'A{row}'] = activo['codigo']
                 ws[f'B{row}'] = activo['nombre']
                 ws[f'C{row}'] = float(activo['monto'])
-                ws[f'C{row}'].number_format = '$#,##0.00'
+                ws[f'C{row}'].number_format = CURRENCY_FORMAT
                 row += 1
             
             ws[f'B{row}'] = 'TOTAL ACTIVOS'
             ws[f'B{row}'].font = Font(bold=True)
             ws[f'C{row}'] = float(self.reporte_data['totales']['activos'])
-            ws[f'C{row}'].number_format = '$#,##0.00'
+            ws[f'C{row}'].number_format = CURRENCY_FORMAT
             ws[f'C{row}'].font = Font(bold=True)
             ws[f'C{row}'].fill = total_fill
             row += 2
@@ -283,7 +287,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
             ws[f'A{row}'].font = Font(name='Arial', size=12, bold=True)
             row += 1
             
-            ws[f'A{row}'] = 'Código'
+            ws[f'A{row}'] = HEADER_CODIGO
             ws[f'B{row}'] = 'Cuenta'
             ws[f'C{row}'] = 'Monto'
             for col in ['A', 'B', 'C']:
@@ -296,13 +300,13 @@ class ExportadorBalanceGeneral(ExportadorReportes):
                 ws[f'A{row}'] = pasivo['codigo']
                 ws[f'B{row}'] = pasivo['nombre']
                 ws[f'C{row}'] = float(pasivo['monto'])
-                ws[f'C{row}'].number_format = '$#,##0.00'
+                ws[f'C{row}'].number_format = CURRENCY_FORMAT
                 row += 1
             
             ws[f'B{row}'] = 'TOTAL PASIVOS'
             ws[f'B{row}'].font = Font(bold=True)
             ws[f'C{row}'] = float(self.reporte_data['totales']['pasivos'])
-            ws[f'C{row}'].number_format = '$#,##0.00'
+            ws[f'C{row}'].number_format = CURRENCY_FORMAT
             ws[f'C{row}'].font = Font(bold=True)
             ws[f'C{row}'].fill = total_fill
             row += 2
@@ -312,7 +316,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
             ws[f'A{row}'].font = Font(name='Arial', size=12, bold=True)
             row += 1
             
-            ws[f'A{row}'] = 'Código'
+            ws[f'A{row}'] = HEADER_CODIGO
             ws[f'B{row}'] = 'Cuenta'
             ws[f'C{row}'] = 'Monto'
             for col in ['A', 'B', 'C']:
@@ -325,7 +329,7 @@ class ExportadorBalanceGeneral(ExportadorReportes):
                 ws[f'A{row}'] = patrimonio['codigo']
                 ws[f'B{row}'] = patrimonio['nombre']
                 ws[f'C{row}'] = float(patrimonio['monto'])
-                ws[f'C{row}'].number_format = '$#,##0.00'
+                ws[f'C{row}'].number_format = CURRENCY_FORMAT
                 row += 1
             
             # Utilidad del período
@@ -334,13 +338,13 @@ class ExportadorBalanceGeneral(ExportadorReportes):
                 label = 'Utilidad del Período' if utilidad_periodo > 0 else 'Pérdida del Período'
                 ws[f'B{row}'] = label
                 ws[f'C{row}'] = float(utilidad_periodo)
-                ws[f'C{row}'].number_format = '$#,##0.00'
+                ws[f'C{row}'].number_format = CURRENCY_FORMAT
                 row += 1
             
             ws[f'B{row}'] = 'TOTAL PATRIMONIO'
             ws[f'B{row}'].font = Font(bold=True)
             ws[f'C{row}'] = float(self.reporte_data['totales']['patrimonio_con_utilidad'])
-            ws[f'C{row}'].number_format = '$#,##0.00'
+            ws[f'C{row}'].number_format = CURRENCY_FORMAT
             ws[f'C{row}'].font = Font(bold=True)
             ws[f'C{row}'].fill = total_fill
             
