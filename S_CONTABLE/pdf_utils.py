@@ -132,7 +132,7 @@ class GeneradorPDF:
         tabla = Table(datos, colWidths=anchos_columnas)
         
         if not estilo_tabla:
-            estilo_tabla = self._estilo_tabla_estandar(len(datos))
+            estilo_tabla = self._estilo_tabla_estandar()
         
         tabla.setStyle(estilo_tabla)
         self.elements.append(tabla)
