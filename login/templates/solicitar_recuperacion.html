@@ -4,150 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperar Contraseña - Sistema Contable</title>
+    {% include '_auth_shared_styles.html' %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .recovery-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            width: 100%;
-            max-width: 450px;
-        }
-        
-        .recovery-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 30px;
-            text-align: center;
-            color: white;
-        }
-        
-        .recovery-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-        
-        .recovery-header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .recovery-header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .recovery-body {
-            padding: 40px 30px;
-        }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .alert-error {
-            background: #fee;
-            color: #c33;
-            border-left: 4px solid #c33;
-        }
-        
-        .alert-success {
-            background: #efe;
-            color: #3c3;
-            border-left: 4px solid #3c3;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
-        
-        .info-box {
-            background: #e7f3ff;
-            border-left: 4px solid #2196F3;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #0d47a1;
-        }
+        .recovery-container { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; width: 100%; max-width: 450px; }
+        .recovery-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; color: white; }
+        .recovery-icon { font-size: 60px; margin-bottom: 20px; }
+        .recovery-header h1 { font-size: 28px; margin-bottom: 10px; }
+        .recovery-header p { font-size: 14px; opacity: 0.9; }
+        .recovery-body { padding: 40px 30px; }
+
+        .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102,126,234,0.3); }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #667eea; text-decoration: none; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+        .info-box { background: #e7f3ff; border-left: 4px solid #2196F3; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #0d47a1; }
     </style>
 </head>
-<body>
+<body class="auth-page">
     <div class="recovery-container">
         <div class="recovery-header">
             <div class="recovery-icon">
