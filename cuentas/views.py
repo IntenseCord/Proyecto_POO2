@@ -14,17 +14,16 @@ DETALLE_CUENTA_URL = 'cuentas:detalle_cuenta'
 ERROR_EMPRESA_NO_ENCONTRADA = 'Empresa no encontrada.'
 ERROR_FORMATO_FECHA_INVALIDO = 'Formato de fecha inválido.'
 
-def obtener_empresa_unica():
-    try:
-        return Empresa.objects.filter(activo=True).order_by('id').first()
-    except Exception:
-        return None
+# Importar función reutilizable
+from S_CONTABLE.utils import obtener_empresa_activa as obtener_empresa_unica
 
 @login_required
 @never_cache
 @require_GET
 def lista_cuentas(request):
-    """Lista todas las cuentas con filtros jerárquicos"""
+    """Lista todas las cuentas con filtros jerárquicos usando utilidades centralizadas"""
+    from S_CONTABLE.utils import aplicar_busqueda_texto, paginar_queryset
+    
     cuentas = Cuenta.objects.select_related('empresa', 'cuenta_padre').all().order_by('codigo')
     
     # Filtros
@@ -38,16 +37,11 @@ def lista_cuentas(request):
     if tipo:
         cuentas = cuentas.filter(tipo=tipo)
     
-    if busqueda:
-        cuentas = cuentas.filter(
-            Q(codigo__icontains=busqueda) | 
-            Q(nombre__icontains=busqueda)
-        )
+    # Usar helper centralizado para búsqueda
+    cuentas = aplicar_busqueda_texto(cuentas, busqueda, ['codigo', 'nombre'])
     
-    # Paginación
-    paginator = Paginator(cuentas, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Usar helper centralizado para paginación
+    page_obj = paginar_queryset(cuentas, request, items_per_page=20)
     
     # Para los filtros
     empresas = Empresa.objects.filter(activo=True)
@@ -222,11 +216,11 @@ def reportes_menu(request):
 @never_cache
 @require_GET
 def balance_comprobacion_view(request):
-    """Vista para el Balance de Comprobación"""
+    """Vista para el Balance de Comprobación usando utilidades centralizadas"""
     from .reportes import BalanceComprobacion
-    from datetime import datetime
     from login.utils import obtener_empresa_usuario
     from .models import TipoCuenta
+    from S_CONTABLE.utils import obtener_fechas_desde_request
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
@@ -243,26 +237,19 @@ def balance_comprobacion_view(request):
     
     # Si hay parámetros de fecha, generar el reporte
     if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
-        fecha_inicio = request.GET.get('fecha_inicio')
-        fecha_fin = request.GET.get('fecha_fin')
         tipo_cuenta = request.GET.get('tipo_cuenta', '')
         
-        try:
-            # Convertir fechas si existen
-            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
-            fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
-            
-            # Generar reporte con filtro de tipo de cuenta
-            reporte = BalanceComprobacion(
-                empresa, 
-                fecha_inicio_obj, 
-                fecha_fin_obj,
-                tipo_cuenta if tipo_cuenta else None
-            )
-            reporte_data = reporte.generar()
-            
-        except ValueError:
-            messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
+        # Usar helper centralizado para parsear fechas
+        fecha_inicio_obj, fecha_fin_obj = obtener_fechas_desde_request(request)
+        
+        # Generar reporte con filtro de tipo de cuenta
+        reporte = BalanceComprobacion(
+            empresa, 
+            fecha_inicio_obj, 
+            fecha_fin_obj,
+            tipo_cuenta if tipo_cuenta else None
+        )
+        reporte_data = reporte.generar()
     
     context = {
         'empresa': empresa,
@@ -278,18 +265,14 @@ def balance_comprobacion_view(request):
 @never_cache
 @require_GET
 def balance_comprobacion_pdf(request):
-    """Exporta el Balance de Comprobación a PDF"""
+    """Exporta el Balance de Comprobación a PDF usando utilidades centralizadas"""
     from django.http import HttpResponse
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter, landscape
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     from .reportes import BalanceComprobacion
     from datetime import datetime
     from login.utils import obtener_empresa_usuario
-    from io import BytesIO
+    from S_CONTABLE.pdf_utils import GeneradorPDF, formatear_moneda
+    from S_CONTABLE.utils import obtener_fechas_desde_request
+    from reportlab.lib.units import inch
     
     empresa = obtener_empresa_usuario(request.user)
     if not empresa:
@@ -299,17 +282,9 @@ def balance_comprobacion_pdf(request):
         messages.error(request, 'No tienes una empresa asignada.')
         return redirect('cuentas:balance_comprobacion')
     
-    # Obtener parámetros
-    fecha_inicio = request.GET.get('fecha_inicio')
-    fecha_fin = request.GET.get('fecha_fin')
+    # Usar helper para obtener fechas
+    fecha_inicio_obj, fecha_fin_obj = obtener_fechas_desde_request(request)
     tipo_cuenta = request.GET.get('tipo_cuenta', '')
-    
-    try:
-        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
-        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
-    except (ValueError, TypeError):
-        fecha_inicio_obj = None
-        fecha_fin_obj = None
     
     # Generar reporte
     reporte = BalanceComprobacion(
@@ -320,61 +295,24 @@ def balance_comprobacion_pdf(request):
     )
     reporte_data = reporte.generar()
     
-    # Crear PDF
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.5*inch, bottomMargin=0.5*inch)
-    elements = []
-    styles = getSampleStyleSheet()
+    # Usar la clase GeneradorPDF para reducir duplicación
+    generador = GeneradorPDF("Balance de Comprobación", orientacion='landscape')
     
-    # Estilo personalizado para el título
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#2c3e50'),
-        spaceAfter=12,
-        alignment=TA_CENTER
-    )
+    # Agregar encabezado
+    periodo = generador.generar_periodo_texto(fecha_inicio_obj, fecha_fin_obj)
+    generador.agregar_encabezado(empresa, "Balance de Comprobación", periodo)
     
-    # Estilo para subtítulos
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#7f8c8d'),
-        spaceAfter=20,
-        alignment=TA_CENTER
-    )
-    
-    # Encabezado
-    elements.append(Paragraph(f"<b>{empresa.nombre}</b>", title_style))
-    elements.append(Paragraph("Balance de Comprobación", title_style))
-    
-    # Período
-    periodo = ""
-    if fecha_inicio_obj and fecha_fin_obj:
-        periodo = f"Del {fecha_inicio_obj.strftime('%d/%m/%Y')} al {fecha_fin_obj.strftime('%d/%m/%Y')}"
-    elif fecha_inicio_obj:
-        periodo = f"Desde {fecha_inicio_obj.strftime('%d/%m/%Y')}"
-    elif fecha_fin_obj:
-        periodo = f"Hasta {fecha_fin_obj.strftime('%d/%m/%Y')}"
-    else:
-        periodo = "Todos los períodos"
-    
-    elements.append(Paragraph(periodo, subtitle_style))
-    elements.append(Spacer(1, 0.2*inch))
-    
-    # Crear tabla
+    # Crear tabla de datos
     data = [['Código', 'Cuenta', 'Débitos', 'Créditos', 'Saldo Deudor', 'Saldo Acreedor']]
     
     for cuenta in reporte_data['cuentas']:
         data.append([
             cuenta['codigo'],
-            cuenta['nombre'][:40],  # Limitar longitud del nombre
-            f"${cuenta['debito']:,.2f}",
-            f"${cuenta['credito']:,.2f}",
-            f"${cuenta['saldo_deudor']:,.2f}",
-            f"${cuenta['saldo_acreedor']:,.2f}",
+            cuenta['nombre'][:40],
+            formatear_moneda(cuenta['debito']),
+            formatear_moneda(cuenta['credito']),
+            formatear_moneda(cuenta['saldo_deudor']),
+            formatear_moneda(cuenta['saldo_acreedor']),
         ])
     
     # Fila de totales
@@ -382,65 +320,30 @@ def balance_comprobacion_pdf(request):
     data.append([
         '',
         'TOTALES',
-        f"${totales['debitos']:,.2f}",
-        f"${totales['creditos']:,.2f}",
-        f"${totales['saldo_deudor']:,.2f}",
-        f"${totales['saldo_acreedor']:,.2f}",
+        formatear_moneda(totales['debitos']),
+        formatear_moneda(totales['creditos']),
+        formatear_moneda(totales['saldo_deudor']),
+        formatear_moneda(totales['saldo_acreedor']),
     ])
     
-    # Crear tabla con estilo
-    table = Table(data, colWidths=[0.8*inch, 3*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
-    table.setStyle(TableStyle([
-        # Encabezado
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        
-        # Contenido
-        ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -2), 9),
-        ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
-        ('ALIGN', (0, 1), (1, -1), 'LEFT'),
-        ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f8f9fa')]),
-        
-        # Totales
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0, -1), (-1, -1), colors.whitesmoke),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, -1), (-1, -1), 10),
-        ('TOPPADDING', (0, -1), (-1, -1), 12),
-        ('BOTTOMPADDING', (0, -1), (-1, -1), 12),
-    ]))
-    
-    elements.append(table)
+    # Agregar tabla usando método del generador
+    anchos = [0.8*inch, 3*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch]
+    generador.agregar_tabla(data, anchos)
     
     # Indicador de balance
-    elements.append(Spacer(1, 0.3*inch))
+    generador.agregar_espaciador(0.3)
     if reporte_data['esta_balanceado']:
         balance_text = "✓ Balance Correcto: Los débitos y créditos están balanceados."
-        color = colors.HexColor('#155724')
     else:
         balance_text = "⚠ Advertencia: Los débitos y créditos NO están balanceados."
-        color = colors.HexColor('#721c24')
     
-    balance_style = ParagraphStyle(
-        'Balance',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=color,
-        alignment=TA_CENTER
-    )
-    elements.append(Paragraph(balance_text, balance_style))
+    from reportlab.platypus import Paragraph
+    generador.elements.append(Paragraph(balance_text, generador.subtitle_style))
     
     # Construir PDF
-    doc.build(elements)
+    buffer = generador.construir()
     
     # Preparar respuesta
-    buffer.seek(0)
     response = HttpResponse(buffer, content_type='application/pdf')
     filename = f"balance_comprobacion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -452,10 +355,10 @@ def balance_comprobacion_pdf(request):
 @never_cache
 @require_GET
 def estado_resultados_view(request):
-    """Vista para el Estado de Resultados"""
+    """Vista para el Estado de Resultados usando utilidades centralizadas"""
     from .reportes import EstadoResultados
-    from datetime import datetime
     from login.utils import obtener_empresa_usuario
+    from S_CONTABLE.utils import obtener_fechas_desde_request
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
@@ -468,20 +371,12 @@ def estado_resultados_view(request):
     
     # Si hay parámetros de fecha, generar el reporte
     if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
-        fecha_inicio = request.GET.get('fecha_inicio')
-        fecha_fin = request.GET.get('fecha_fin')
+        # Usar helper centralizado para parsear fechas
+        fecha_inicio_obj, fecha_fin_obj = obtener_fechas_desde_request(request)
         
-        try:
-            # Convertir fechas si existen
-            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
-            fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
-            
-            # Generar reporte
-            reporte = EstadoResultados(empresa, fecha_inicio_obj, fecha_fin_obj)
-            reporte_data = reporte.generar()
-            
-        except ValueError:
-            messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
+        # Generar reporte
+        reporte = EstadoResultados(empresa, fecha_inicio_obj, fecha_fin_obj)
+        reporte_data = reporte.generar()
     
     context = {
         'empresa': empresa,
@@ -606,10 +501,10 @@ def estado_resultados_pdf(request):
 @never_cache
 @require_GET
 def balance_general_view(request):
-    """Vista para el Balance General"""
+    """Vista para el Balance General usando utilidades centralizadas"""
     from .reportes import BalanceGeneral
-    from datetime import datetime
     from login.utils import obtener_empresa_usuario
+    from S_CONTABLE.utils import obtener_fechas_desde_request
     
     reporte_data = None
     empresa = obtener_empresa_usuario(request.user)
@@ -630,25 +525,17 @@ def balance_general_view(request):
             out = StringIO()
             call_command('init_plan_cuentas', empresa=empresa.id, force=True, stdout=out)
             messages.success(request, f'Plan de cuentas inicializado automáticamente con {Cuenta.objects.filter(empresa=empresa).count()} cuentas básicas.')
-        except Exception as e:
-            messages.warning(request, f'No se pudo inicializar el plan de cuentas automáticamente. Por favor, crea las cuentas manualmente.')
+        except Exception:
+            messages.warning(request, 'No se pudo inicializar el plan de cuentas automáticamente. Por favor, crea las cuentas manualmente.')
     
     # Si hay parámetros de fecha, generar el reporte
     if request.method == 'GET' and (request.GET.get('generar') or request.GET.get('fecha_inicio') or request.GET.get('fecha_fin')):
-        fecha_inicio = request.GET.get('fecha_inicio')
-        fecha_fin = request.GET.get('fecha_fin')
+        # Usar helper centralizado para parsear fechas
+        fecha_inicio_obj, fecha_fin_obj = obtener_fechas_desde_request(request)
         
-        try:
-            # Convertir fechas si existen
-            fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
-            fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
-            
-            # Generar reporte
-            reporte = BalanceGeneral(empresa, fecha_inicio_obj, fecha_fin_obj)
-            reporte_data = reporte.generar()
-            
-        except ValueError:
-            messages.error(request, ERROR_FORMATO_FECHA_INVALIDO)
+        # Generar reporte
+        reporte = BalanceGeneral(empresa, fecha_inicio_obj, fecha_fin_obj)
+        reporte_data = reporte.generar()
     
     context = {
         'empresa': empresa,

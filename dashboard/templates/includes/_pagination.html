@@ -1,0 +1,26 @@
+{% comment %}
+  Componente reutilizable de paginación
+  Requiere: page_obj (objeto de paginación)
+  Opcional: query_params (diccionario con parámetros de filtrado)
+{% endcomment %}
+
+{% if page_obj.has_other_pages %}
+<div style="margin-top: 20px; text-align: center;">
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+    <a href="?page=1{% for key, value in query_params.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; Primera</a>
+    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in query_params.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+    {% endif %}
+
+    <span style="margin: 0 15px;">
+      Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% for key, value in query_params.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in query_params.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última &raquo;</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+

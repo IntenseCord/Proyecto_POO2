@@ -48,7 +48,9 @@ def inventario_dashboard(request):
 @never_cache
 @require_GET
 def lista_productos(request):
-    """Lista todos los productos con filtros y paginación"""
+    """Lista todos los productos con filtros y paginación usando utilidades centralizadas"""
+    from S_CONTABLE.utils import aplicar_busqueda_texto, paginar_queryset
+    
     productos = Producto.objects.all()
     
     # Filtros
@@ -56,12 +58,8 @@ def lista_productos(request):
     categoria_id = request.GET.get('categoria')
     estado = request.GET.get('estado')
     
-    if busqueda:
-        productos = productos.filter(
-            Q(nombre__icontains=busqueda) | 
-            Q(codigo__icontains=busqueda) |
-            Q(descripcion__icontains=busqueda)
-        )
+    # Usar helper centralizado para búsqueda de texto
+    productos = aplicar_busqueda_texto(productos, busqueda, ['nombre', 'codigo', 'descripcion'])
     
     if categoria_id:
         productos = productos.filter(categoria_id=categoria_id)
@@ -69,10 +67,8 @@ def lista_productos(request):
     if estado:
         productos = productos.filter(estado=estado)
     
-    # Paginación
-    paginator = Paginator(productos, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Usar helper centralizado para paginación
+    page_obj = paginar_queryset(productos, request, items_per_page=10)
     
     # Para los filtros
     categorias = Categoria.objects.all()
@@ -206,7 +202,9 @@ def crear_movimiento(request, producto_id):
 @never_cache
 @require_GET
 def lista_movimientos(request):
-    """Lista todos los movimientos de inventario con filtros"""
+    """Lista todos los movimientos de inventario con filtros usando utilidades centralizadas"""
+    from S_CONTABLE.utils import aplicar_filtros_fecha, paginar_queryset
+    
     movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').all().order_by('-fecha')
     
     # Filtros
@@ -221,16 +219,11 @@ def lista_movimientos(request):
     if tipo:
         movimientos = movimientos.filter(tipo=tipo)
     
-    if fecha_desde:
-        movimientos = movimientos.filter(fecha__gte=fecha_desde)
+    # Usar helper centralizado para filtros de fecha
+    movimientos = aplicar_filtros_fecha(movimientos, fecha_desde, fecha_hasta, campo_fecha='fecha')
     
-    if fecha_hasta:
-        movimientos = movimientos.filter(fecha__lte=fecha_hasta)
-    
-    # Paginación
-    paginator = Paginator(movimientos, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Usar helper centralizado para paginación
+    page_obj = paginar_queryset(movimientos, request, items_per_page=20)
     
     # Productos para el filtro
     productos = Producto.objects.filter(estado='activo').order_by('nombre')

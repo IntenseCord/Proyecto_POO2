@@ -1,0 +1,15 @@
+{% comment %}
+  Componente reutilizable para filtros de fecha
+  Uso: {% include 'includes/_date_filters.html' with fecha_desde=fecha_desde fecha_hasta=fecha_hasta %}
+{% endcomment %}
+
+<div class="form-group">
+  <label for="fecha_desde">Fecha Desde</label>
+  <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+</div>
+
+<div class="form-group">
+  <label for="fecha_hasta">Fecha Hasta</label>
+  <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+</div>
+

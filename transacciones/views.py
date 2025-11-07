@@ -6,10 +6,11 @@ from django.db.models import Q, Sum
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
+from datetime import date
+from decimal import Decimal
 from .models import Comprobante, DetalleComprobante, TipoComprobante
 from .forms import ComprobanteForm, DetalleComprobanteFormSet, FiltroComprobanteForm
 from empresa.models import Empresa
-from decimal import Decimal
 from inventario.models import Producto, MovimientoInventario
 
 # Constantes para evitar duplicación
@@ -50,7 +51,9 @@ def _mostrar_mensaje_balanceo(request, comprobante):
 @login_required
 @require_GET
 def lista_comprobantes(request):
-    """Lista todos los comprobantes con filtros"""
+    """Lista todos los comprobantes con filtros usando utilidades centralizadas"""
+    from S_CONTABLE.utils import aplicar_filtros_fecha, paginar_queryset
+    
     comprobantes = Comprobante.objects.select_related('empresa', 'usuario_creador').all()
     
     # Filtros
@@ -69,21 +72,14 @@ def lista_comprobantes(request):
     if estado:
         comprobantes = comprobantes.filter(estado=estado)
     
-    if fecha_desde:
-        comprobantes = comprobantes.filter(fecha__gte=fecha_desde)
+    # Usar helper centralizado para filtros de fecha
+    comprobantes = aplicar_filtros_fecha(comprobantes, fecha_desde, fecha_hasta, campo_fecha='fecha')
     
-    if fecha_hasta:
-        comprobantes = comprobantes.filter(fecha__lte=fecha_hasta)
-    
-    # Paginación
-    paginator = Paginator(comprobantes, 15)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Usar helper centralizado para paginación
+    page_obj = paginar_queryset(comprobantes, request, items_per_page=15)
     
     # Para los filtros
     empresas = Empresa.objects.filter(activo=True)
-    productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
-    productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
     productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
     
     context = {
@@ -346,7 +342,6 @@ def crear_factura_venta(request):
     Usa la clase FacturaVenta que implementa ABSTRACCIÓN.
     """
     from .documentos import FacturaVenta
-    from datetime import date
     
     empresas = Empresa.objects.filter(activo=True)
     
@@ -370,7 +365,6 @@ def crear_factura_venta(request):
         except Exception as e:
             messages.error(request, f'Error al crear la factura: {str(e)}')
     
-    from datetime import date
     productos_activos = Producto.objects.filter(estado='activo').order_by('nombre')
     context = {
         'empresas': empresas,
@@ -390,7 +384,6 @@ def crear_nota_credito(request):
     Usa la clase NotaCredito que implementa ABSTRACCIÓN.
     """
     from .documentos import NotaCredito
-    from datetime import date
     
     empresas = Empresa.objects.filter(activo=True)
     
@@ -444,7 +437,6 @@ def crear_recibo_caja(request):
     Usa la clase ReciboCaja que implementa ABSTRACCIÓN.
     """
     from .documentos import ReciboCaja
-    from datetime import date
     
     empresas = Empresa.objects.filter(activo=True)
     

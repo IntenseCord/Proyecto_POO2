@@ -13,6 +13,71 @@ from transacciones.models import DetalleComprobante
 from datetime import datetime
 
 
+# ============================================
+# FUNCIONES HELPER PARA REDUCIR DUPLICACIÓN
+# ============================================
+
+def _calcular_movimientos_cuenta(movimientos, cuenta, naturaleza):
+    """
+    Calcula movimientos de una cuenta y retorna su saldo.
+    Centraliza la lógica duplicada en las 3 secciones del Estado de Resultados.
+    
+    Args:
+        movimientos: QuerySet de DetalleComprobante
+        cuenta: Objeto Cuenta
+        naturaleza: 'DEBITO' o 'CREDITO'
+    
+    Returns:
+        Tuple (debito, credito, saldo)
+    """
+    movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
+        debito=Sum('debito'),
+        credito=Sum('credito')
+    )
+    
+    debito = movimientos_cuenta['debito'] or Decimal('0.00')
+    credito = movimientos_cuenta['credito'] or Decimal('0.00')
+    
+    # Calcular saldo según naturaleza
+    if naturaleza == 'DEBITO':
+        saldo = debito - credito
+    else:  # CREDITO
+        saldo = credito - debito
+    
+    return debito, credito, saldo
+
+
+def _generar_lista_cuentas_tipo(movimientos, cuentas_queryset, naturaleza):
+    """
+    Genera lista de cuentas con sus montos para un tipo específico.
+    Reduce duplicación entre Ingresos, Costos y Gastos.
+    
+    Args:
+        movimientos: QuerySet de movimientos filtrados
+        cuentas_queryset: QuerySet de cuentas del tipo específico
+        naturaleza: 'DEBITO' o 'CREDITO'
+    
+    Returns:
+        Tuple (lista_cuentas, total)
+    """
+    lista = []
+    total = Decimal('0.00')
+    
+    for cuenta in cuentas_queryset:
+        _, _, saldo = _calcular_movimientos_cuenta(movimientos, cuenta, naturaleza)
+        
+        if saldo != 0:
+            lista.append({
+                'cuenta': cuenta,
+                'codigo': cuenta.codigo,
+                'nombre': cuenta.nombre,
+                'monto': saldo
+            })
+            total += saldo
+    
+    return lista, total
+
+
 def _determinar_resultado(monto):
     """Helper: Determina si el resultado es UTILIDAD, PÉRDIDA o EQUILIBRIO"""
     if monto > 0:
@@ -164,95 +229,19 @@ class EstadoResultados(ReporteFinanciero):
         """
         movimientos = self.obtener_movimientos()
         
-        # Obtener cuentas de Ingresos
-        cuentas_ingreso = Cuenta.objects.filter(
-            empresa=self.empresa,
-            tipo=TipoCuenta.INGRESO,
-            esta_activa=True
-        ).order_by('codigo')
+        # Obtener cuentas por tipo usando un helper para reducir duplicación
+        cuentas_ingreso = self._obtener_cuentas_por_tipo(TipoCuenta.INGRESO)
+        cuentas_costo = self._obtener_cuentas_por_tipo(TipoCuenta.COSTO)
+        cuentas_gasto = self._obtener_cuentas_por_tipo(TipoCuenta.GASTO)
         
-        # Obtener cuentas de Gastos
-        cuentas_gasto = Cuenta.objects.filter(
-            empresa=self.empresa,
-            tipo=TipoCuenta.GASTO,
-            esta_activa=True
-        ).order_by('codigo')
+        # Calcular Ingresos (naturaleza CREDITO)
+        ingresos, total_ingresos = _generar_lista_cuentas_tipo(movimientos, cuentas_ingreso, 'CREDITO')
         
-        # Obtener cuentas de Costos
-        cuentas_costo = Cuenta.objects.filter(
-            empresa=self.empresa,
-            tipo=TipoCuenta.COSTO,
-            esta_activa=True
-        ).order_by('codigo')
+        # Calcular Costos (naturaleza DEBITO)
+        costos, total_costos = _generar_lista_cuentas_tipo(movimientos, cuentas_costo, 'DEBITO')
         
-        # Calcular Ingresos
-        ingresos = []
-        total_ingresos = Decimal('0.00')
-        
-        for cuenta in cuentas_ingreso:
-            movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
-                debito=Sum('debito'),
-                credito=Sum('credito')
-            )
-            
-            debito = movimientos_cuenta['debito'] or Decimal('0.00')
-            credito = movimientos_cuenta['credito'] or Decimal('0.00')
-            saldo = credito - debito  # Los ingresos tienen naturaleza crédito
-            
-            if saldo != 0:
-                ingresos.append({
-                    'cuenta': cuenta,
-                    'codigo': cuenta.codigo,
-                    'nombre': cuenta.nombre,
-                    'monto': saldo
-                })
-                total_ingresos += saldo
-        
-        # Calcular Costos
-        costos = []
-        total_costos = Decimal('0.00')
-        
-        for cuenta in cuentas_costo:
-            movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
-                debito=Sum('debito'),
-                credito=Sum('credito')
-            )
-            
-            debito = movimientos_cuenta['debito'] or Decimal('0.00')
-            credito = movimientos_cuenta['credito'] or Decimal('0.00')
-            saldo = debito - credito  # Los costos tienen naturaleza débito
-            
-            if saldo != 0:
-                costos.append({
-                    'cuenta': cuenta,
-                    'codigo': cuenta.codigo,
-                    'nombre': cuenta.nombre,
-                    'monto': saldo
-                })
-                total_costos += saldo
-        
-        # Calcular Gastos
-        gastos = []
-        total_gastos = Decimal('0.00')
-        
-        for cuenta in cuentas_gasto:
-            movimientos_cuenta = movimientos.filter(cuenta=cuenta).aggregate(
-                debito=Sum('debito'),
-                credito=Sum('credito')
-            )
-            
-            debito = movimientos_cuenta['debito'] or Decimal('0.00')
-            credito = movimientos_cuenta['credito'] or Decimal('0.00')
-            saldo = debito - credito  # Los gastos tienen naturaleza débito
-            
-            if saldo != 0:
-                gastos.append({
-                    'cuenta': cuenta,
-                    'codigo': cuenta.codigo,
-                    'nombre': cuenta.nombre,
-                    'monto': saldo
-                })
-                total_gastos += saldo
+        # Calcular Gastos (naturaleza DEBITO)
+        gastos, total_gastos = _generar_lista_cuentas_tipo(movimientos, cuentas_gasto, 'DEBITO')
         
         # Calcular Utilidad Bruta y Neta
         utilidad_bruta = total_ingresos - total_costos
@@ -274,6 +263,17 @@ class EstadoResultados(ReporteFinanciero):
             },
             'resultado': _determinar_resultado(utilidad_neta)
         }
+    
+    def _obtener_cuentas_por_tipo(self, tipo_cuenta):
+        """
+        Helper para obtener cuentas por tipo.
+        Reduce duplicación en las consultas.
+        """
+        return Cuenta.objects.filter(
+            empresa=self.empresa,
+            tipo=tipo_cuenta,
+            esta_activa=True
+        ).order_by('codigo')
 
 
 class BalanceGeneral(ReporteFinanciero):
