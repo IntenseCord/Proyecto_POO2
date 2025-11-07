@@ -11,6 +11,7 @@ from django.urls import reverse
 from .models import VerificacionEmail, Perfil, RecuperacionContrasena, IntentoLogin
 from django.utils import timezone
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,23 @@ CAMBIAR_CONTRASENA_TEMPLATE = 'cambiar_contrasena.html'
 
 # Mensajes de error comunes
 ERROR_CLAVE_CORTA = 'La contraseña debe tener al menos 6 caracteres'
+
+def _send_email_async(subject, message, recipient):
+    """Envía email en un hilo en segundo plano para no bloquear la petición."""
+    def _worker():
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [recipient],
+                fail_silently=False,
+            )
+        except Exception as e:
+            logger.error(f"Error enviando email a {recipient}: {e}")
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
 
 @require_GET
 def landing_view(request):
@@ -152,16 +170,7 @@ Saludos,
 Equipo de Sistema Contable
     '''
     
-    try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-    except Exception as e:
-        logger.error(f"Error al enviar email de verificación a {user.email}: {e}")
+    _send_email_async(subject, message, user.email)
 
 @require_GET
 def verificar_email_view(request, token):
@@ -301,16 +310,7 @@ Saludos,
 Equipo de Sistema Contable
     '''
     
-    try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-    except Exception as e:
-        logger.error(f"Error al enviar email de recuperación a {user.email}: {e}")
+    _send_email_async(subject, message, user.email)
 
 @require_POST
 def logout_view(request):
