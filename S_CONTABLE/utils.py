@@ -61,6 +61,16 @@ def construir_query_params(request_get):
     return params
 
 
+def _construir_formulario(form_class, request, instance=None):
+    """
+    Crea una instancia del formulario para GET o POST reduciendo condicionales.
+    """
+    kwargs = {'instance': instance} if instance else {}
+    if request.method == 'POST':
+        return form_class(request.POST, request.FILES, **kwargs)
+    return form_class(**kwargs)
+
+
 def manejar_formulario_crud(request, form_class, template_name, redirect_url, 
                             instance=None, mensaje_exito='', context_extra=None):
     """
@@ -79,22 +89,17 @@ def manejar_formulario_crud(request, form_class, template_name, redirect_url,
     Returns:
         HttpResponse
     """
-    if request.method == 'POST':
-        if instance:
-            form = form_class(request.POST, request.FILES, instance=instance)
-        else:
-            form = form_class(request.POST, request.FILES)
-        
-        if form.is_valid():
-            obj = form.save()
-            if mensaje_exito:
-                messages.success(request, mensaje_exito)
-            return redirect(redirect_url, **{'pk': obj.pk} if hasattr(obj, 'pk') else {})
-    else:
-        if instance:
-            form = form_class(instance=instance)
-        else:
-            form = form_class()
+    form = _construir_formulario(form_class, request, instance)
+
+    if request.method == 'POST' and form.is_valid():
+        obj = form.save()
+        if mensaje_exito:
+            messages.success(request, mensaje_exito)
+        kwargs = {'pk': getattr(obj, 'pk', None)} if hasattr(obj, 'pk') else {}
+        # Eliminar clave si getattr devolvió None para evitar pasar pk=None
+        if 'pk' in kwargs and kwargs['pk'] is None:
+            kwargs = {}
+        return redirect(redirect_url, **kwargs)
     
     context = {'form': form}
     if context_extra:

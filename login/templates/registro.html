@@ -4,23 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Sistema Contable</title>
+    {% include '_auth_shared_styles.html' %}
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
         .register-container {
             background: white;
             border-radius: 20px;
@@ -31,85 +16,16 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-        
         .register-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 40px 30px;
             text-align: center;
             color: white;
         }
-        
-        .register-header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .register-header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .register-body {
-            padding: 40px 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .password-wrapper {
-            position: relative;
-        }
-        
-        .password-wrapper input {
-            padding-right: 45px;
-        }
-        
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            color: #666;
-            transition: color 0.3s ease;
-        }
-        
-        .toggle-password:hover {
-            color: #667eea;
-        }
-        
-        .toggle-password svg {
-            width: 20px;
-            height: 20px;
-            display: block;
-        }
-        
+        .register-header h1 { font-size: 28px; margin-bottom: 10px; }
+        .register-header p { font-size: 14px; opacity: 0.9; }
+        .register-body { padding: 40px 30px; }
+
         .btn-register {
             width: 100%;
             padding: 14px;
@@ -122,151 +38,33 @@
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn-register:active {
-            transform: translateY(0);
-        }
-        
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        
-        .login-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-        
-        .login-link a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-        
-        .alert {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        
-        .alert-error {
-            background-color: #fee;
-            color: #c33;
-            border: 1px solid #fcc;
-        }
-        
-        .alert-success {
-            background-color: #efe;
-            color: #3c3;
-            border: 1px solid #cfc;
-        }
-        
-        .password-hint {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        .password-strength {
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .strength-bar {
-            height: 6px;
-            border-radius: 3px;
-            background: #e0e0e0;
-            overflow: hidden;
-            margin-bottom: 5px;
-        }
-        
-        .strength-fill {
-            height: 100%;
-            transition: all 0.3s ease;
-            border-radius: 3px;
-        }
-        
-        .strength-text {
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .strength-weak { 
-            background: #e74c3c !important; 
-            width: 100%;
-        }
-        .strength-medium { 
-            background: #f39c12 !important; 
-            width: 100%;
-        }
-        .strength-good { 
-            background: #3498db !important; 
-            width: 100%;
-        }
-        .strength-strong { 
-            background: #27ae60 !important; 
-            width: 100%;
-        }
-        .strength-very-strong { 
-            background: #ffd700 !important; 
-            width: 100%;
-        }
-        .requirements {
-            margin-top: 10px;
-            font-size: 12px;
-        }
-        
-        .requirement {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 5px 0;
-            color: #7f8c8d;
-        }
-        
-        .requirement.met {
-            color: #27ae60;
-        }
-        
-        .requirement-icon {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid #bdc3c7;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-        
-        .requirement.met .requirement-icon {
-            background: #27ae60;
-            border-color: #27ae60;
-        }
-        
-        .requirement-icon::after {
-            content: '';
-            display: none;
-            width: 4px;
-            height: 8px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-            margin-bottom: 2px;
-        }
-        
-        .requirement.met .requirement-icon::after {
-            display: block;
-        }
+        .btn-register:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+        .btn-register:active { transform: translateY(0); }
+
+        .login-link { text-align: center; margin-top: 20px; font-size: 14px; }
+        .login-link a { color: #667eea; text-decoration: none; font-weight: 600; transition: color 0.3s ease; }
+        .login-link a:hover { color: #764ba2; text-decoration: underline; }
+
+        .password-hint { font-size: 12px; color: #7f8c8d; margin-top: 5px; }
+        .password-strength { margin-top: 10px; display: none; }
+        .strength-bar { height: 6px; border-radius: 3px; background: #e0e0e0; overflow: hidden; margin-bottom: 5px; }
+        .strength-fill { height: 100%; transition: all 0.3s ease; border-radius: 3px; }
+        .strength-text { font-size: 12px; font-weight: 600; }
+        .strength-weak { background: #e74c3c !important; width: 100%; }
+        .strength-medium { background: #f39c12 !important; width: 100%; }
+        .strength-good { background: #3498db !important; width: 100%; }
+        .strength-strong { background: #27ae60 !important; width: 100%; }
+        .strength-very-strong { background: #ffd700 !important; width: 100%; }
+        .requirements { margin-top: 10px; font-size: 12px; }
+        .requirement { display: flex; align-items: center; gap: 8px; margin: 5px 0; color: #7f8c8d; }
+        .requirement.met { color: #27ae60; }
+        .requirement-icon { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #bdc3c7; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; flex-shrink: 0; }
+        .requirement.met .requirement-icon { background: #27ae60; border-color: #27ae60; }
+        .requirement-icon::after { content: ''; display: none; width: 4px; height: 8px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
+        .requirement.met .requirement-icon::after { display: block; }
+
+        /* Override shared for this page: place eye icon near top */
+        .toggle-password { top: 12px; transform: none; }
     </style>
 </head>
 <body>
