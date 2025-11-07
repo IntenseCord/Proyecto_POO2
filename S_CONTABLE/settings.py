@@ -38,11 +38,14 @@ if csrf_origins:
         origin = origin.strip()
         if not origin:
             continue
+        
+        # Determinar si el origen es válido
+        is_https = origin.startswith('https://')
         # NOSONAR python:S5332 - HTTP is allowed only for localhost in development
-        if origin.startswith('https://'):
-            CSRF_TRUSTED_ORIGINS.append(origin)
-        elif DEBUG and origin.startswith('http://') and ('localhost' in origin or '127.0.0.1' in origin):
-            # Solo permitir HTTP para localhost en modo DEBUG
+        is_local_http = (DEBUG and origin.startswith('http://') and 
+                        ('localhost' in origin or '127.0.0.1' in origin))
+        
+        if is_https or is_local_http:
             CSRF_TRUSTED_ORIGINS.append(origin)
 else:
     CSRF_TRUSTED_ORIGINS = []
