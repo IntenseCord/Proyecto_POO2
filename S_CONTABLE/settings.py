@@ -32,12 +32,18 @@ ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='localhost,1
 # Trusted origins for CSRF when deployed (e.g., https://your-app.onrender.com)
 csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='', cast=str).strip()
 if csrf_origins:
-    # Solo agregar orígenes que comiencen con http:// o https://
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip() 
-        for origin in csrf_origins.split(',') 
-        if origin.strip() and (origin.strip().startswith('http://') or origin.strip().startswith('https://'))
-    ]
+    # En producción, solo permitir HTTPS. En desarrollo, permitir HTTP para localhost
+    CSRF_TRUSTED_ORIGINS = []
+    for origin in csrf_origins.split(','):
+        origin = origin.strip()
+        if not origin:
+            continue
+        # NOSONAR python:S5332 - HTTP is allowed only for localhost in development
+        if origin.startswith('https://'):
+            CSRF_TRUSTED_ORIGINS.append(origin)
+        elif DEBUG and origin.startswith('http://') and ('localhost' in origin or '127.0.0.1' in origin):
+            # Solo permitir HTTP para localhost en modo DEBUG
+            CSRF_TRUSTED_ORIGINS.append(origin)
 else:
     CSRF_TRUSTED_ORIGINS = []
 

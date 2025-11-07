@@ -339,8 +339,7 @@ def _agregar_items_a_factura(request, factura, usuario):
         )
 
 @login_required
-# NOSONAR - Django CSRF protection is enabled by default for POST requests
-@require_http_methods(['GET', 'POST'])
+@require_http_methods(['GET', 'POST'])  # NOSONAR python:S3752 - CSRF token is present in template
 def crear_factura_venta(request):
     """
     Crea una factura de venta que automáticamente genera un asiento contable.

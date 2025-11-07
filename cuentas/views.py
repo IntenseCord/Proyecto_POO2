@@ -220,6 +220,7 @@ def reportes_menu(request):
 
 @login_required
 @never_cache
+@require_GET
 def balance_comprobacion_view(request):
     """Vista para el Balance de Comprobación"""
     from .reportes import BalanceComprobacion
