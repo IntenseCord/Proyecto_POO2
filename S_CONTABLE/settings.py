@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 from decouple import config
 import dj_database_url
 
@@ -50,6 +51,14 @@ if csrf_origins:
 else:
     CSRF_TRUSTED_ORIGINS = []
 
+# Auto-config for Render: allow the external hostname and trust its HTTPS origin
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    if RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    https_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if https_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(https_origin)
 
 # Application definition
 
@@ -173,6 +182,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Render/Proxy HTTPS header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Secure cookies and redirect to HTTPS in production
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
 
 # Login URL
 LOGIN_URL = 'login:login'
