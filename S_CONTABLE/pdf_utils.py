@@ -137,7 +137,7 @@ class GeneradorPDF:
         tabla.setStyle(estilo_tabla)
         self.elements.append(tabla)
     
-    def _estilo_tabla_estandar(self, num_filas):
+    def _estilo_tabla_estandar(self):
         """Retorna un estilo de tabla estándar"""
         return TableStyle([
             # Encabezado
