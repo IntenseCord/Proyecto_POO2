@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'reportes',
     'transacciones',
     'inventario',
+    'anymail',
 ]
 
 MIDDLEWARE = [
@@ -204,6 +205,15 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@scontable.com')
 # Timeout (seconds) for SMTP connections to prevent worker timeouts in production
 EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+
+# Optional: switch to API-based email providers in production
+# Set EMAIL_PROVIDER=sendgrid and define SENDGRID_API_KEY to enable
+EMAIL_PROVIDER = config('EMAIL_PROVIDER', default='smtp')
+if EMAIL_PROVIDER.lower() == 'sendgrid':
+    EMAIL_BACKEND = 'anymail.backends.sendgrid.EmailBackend'
+    ANYMAIL = {
+        'SENDGRID_API_KEY': config('SENDGRID_API_KEY', default=''),
+    }
 
 # Django REST Framework
 REST_FRAMEWORK = {
