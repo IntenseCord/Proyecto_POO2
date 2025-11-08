@@ -214,6 +214,11 @@ if EMAIL_PROVIDER.lower() == 'sendgrid':
     ANYMAIL = {
         'SENDGRID_API_KEY': config('SENDGRID_API_KEY', default=''),
     }
+elif EMAIL_PROVIDER.lower() == 'postmark':
+    EMAIL_BACKEND = 'anymail.backends.postmark.EmailBackend'
+    ANYMAIL = {
+        'POSTMARK_SERVER_TOKEN': config('POSTMARK_SERVER_TOKEN', default=''),
+    }
 
 # Django REST Framework
 REST_FRAMEWORK = {
