@@ -15,6 +15,7 @@ from inventario.models import Producto, MovimientoInventario
 
 # Constantes para evitar duplicación
 DETALLE_COMPROBANTE_URL = 'transacciones:detalle_comprobante'
+CREAR_COMPROBANTE_TEMPLATE = 'transacciones/crear_comprobante.html'
 MAX_ITEMS_PER_DOCUMENT = 100  # Límite máximo de items por seguridad
 
 
@@ -141,7 +142,7 @@ def crear_comprobante(request):
                         'formset': formset,
                         'titulo': 'Crear Comprobante',
                     }
-                    return render(request, 'transacciones/crear_comprobante.html', context)
+                    return render(request, CREAR_COMPROBANTE_TEMPLATE, context)
                 
                 # Guardar comprobante
                 comprobante = form.save(commit=False)
@@ -191,7 +192,7 @@ def crear_comprobante(request):
         'titulo': 'Crear Comprobante',
     }
     
-    return render(request, 'transacciones/crear_comprobante.html', context)
+    return render(request, CREAR_COMPROBANTE_TEMPLATE, context)
 
 @login_required
 @transaction.atomic
@@ -245,7 +246,7 @@ def editar_comprobante(request, comprobante_id):
         'titulo': 'Editar Comprobante',
     }
     
-    return render(request, 'transacciones/crear_comprobante.html', context)
+    return render(request, CREAR_COMPROBANTE_TEMPLATE, context)
 
 @login_required
 @require_http_methods(['GET'])
