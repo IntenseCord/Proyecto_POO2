@@ -8,9 +8,34 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <h5 class="mb-0">{{ comprobante.get_tipo_display }} - {{ comprobante.numero }}</h5>
-        <small class="text-muted">Fecha: {{ comprobante.fecha|date:'d/m/Y' }} | Estado: {{ comprobante.estado }}</small>
+        <small class="text-muted">
+          Fecha: {{ comprobante.fecha|date:'d/m/Y' }} | Estado: 
+          {% if comprobante.estado == 'BORRADOR' %}
+          <span class="badge badge-borrador">Borrador</span>
+          {% elif comprobante.estado == 'APROBADO' %}
+          <span class="badge badge-aprobado">Aprobado</span>
+          {% else %}
+          <span class="badge badge-anulado">Anulado</span>
+          {% endif %}
+        </small>
       </div>
       <div>
+        {% if comprobante.estado == 'BORRADOR' %}
+          <a href="{% url 'transacciones:editar_comprobante' comprobante.id %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar
+          </a>
+          {% if comprobante.esta_balanceado %}
+          <a href="{% url 'transacciones:aprobar_comprobante' comprobante.id %}" class="btn btn-success" 
+             onclick="return confirm('¿Está seguro de aprobar este comprobante? No podrá editarlo después.')">
+            <i class="fas fa-check"></i> Aprobar
+          </a>
+          {% endif %}
+        {% elif comprobante.estado == 'APROBADO' %}
+          <a href="{% url 'transacciones:anular_comprobante' comprobante.id %}" class="btn btn-danger"
+             onclick="return confirm('¿Está seguro de anular este comprobante?')">
+            <i class="fas fa-ban"></i> Anular
+          </a>
+        {% endif %}
         <a href="{% url 'transacciones:lista_comprobantes' %}" class="btn btn-outline-secondary">
           <i class="fas fa-arrow-left"></i> Volver
         </a>

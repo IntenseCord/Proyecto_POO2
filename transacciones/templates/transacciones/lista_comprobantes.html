@@ -80,7 +80,7 @@
     <tbody>
       {% for comprobante in page_obj %}
       <tr>
-        <td><strong>{{ comprobante.numero }}</strong></td>
+        <td><strong class="numero-comprobante">{{ comprobante.numero }}</strong></td>
         <td>{{ comprobante.get_tipo_display }}</td>
         <td>{{ comprobante.fecha|date:"d/m/Y" }}</td>
         <td>{{ comprobante.descripcion|truncatewords:10 }}</td>
@@ -136,5 +136,20 @@
   </div>
 </div>
 {% endif %}
+
+<script>
+// Formatear números de comprobantes con 2 dígitos
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.numero-comprobante').forEach(function(element) {
+    const numero = element.textContent.trim();
+    // Convertir a número eliminando ceros a la izquierda
+    const numeroInt = parseInt(numero.replace(/^0+/, '') || '0');
+    if (!isNaN(numeroInt)) {
+      // Formatear con 2 dígitos (padStart con 2)
+      element.textContent = numeroInt.toString().padStart(2, '0');
+    }
+  });
+});
+</script>
 
 {% endblock %}

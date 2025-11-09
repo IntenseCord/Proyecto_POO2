@@ -124,8 +124,25 @@ def crear_comprobante(request):
         form = ComprobanteForm(request.POST)
         formset = DetalleComprobanteFormSet(request.POST)
         
+        # Mostrar errores si el formulario no es válido
+        if not form.is_valid():
+            messages.error(request, 'Por favor corrige los errores en el formulario del comprobante.')
+        if not formset.is_valid():
+            messages.error(request, 'Por favor corrige los errores en los movimientos contables.')
+        
         if form.is_valid() and formset.is_valid():
             try:
+                # Validar que haya al menos 2 movimientos
+                detalles_validos = [f for f in formset.cleaned_data if f and not f.get('DELETE', False)]
+                if len(detalles_validos) < 2:
+                    messages.error(request, 'Debe registrar al menos 2 movimientos contables (débito y crédito).')
+                    context = {
+                        'form': form,
+                        'formset': formset,
+                        'titulo': 'Crear Comprobante',
+                    }
+                    return render(request, 'transacciones/crear_comprobante.html', context)
+                
                 # Guardar comprobante
                 comprobante = form.save(commit=False)
                 comprobante.usuario_creador = request.user
@@ -194,6 +211,18 @@ def editar_comprobante(request, comprobante_id):
         
         if form.is_valid() and formset.is_valid():
             try:
+                # Validar que haya al menos 2 movimientos
+                detalles_validos = [f for f in formset.cleaned_data if f and not f.get('DELETE', False)]
+                if len(detalles_validos) < 2:
+                    messages.error(request, 'Debe registrar al menos 2 movimientos contables (débito y crédito).')
+                    context = {
+                        'form': form,
+                        'formset': formset,
+                        'comprobante': comprobante,
+                        'titulo': 'Editar Comprobante',
+                    }
+                    return render(request, 'transacciones/editar_comprobante.html', context)
+                
                 form.save()
                 _procesar_detalles_formset(formset)
                 comprobante.calcular_totales()
@@ -219,8 +248,7 @@ def editar_comprobante(request, comprobante_id):
     return render(request, 'transacciones/crear_comprobante.html', context)
 
 @login_required
-# NOSONAR - Django CSRF protection is enabled by default for POST requests
-@require_http_methods(['GET', 'POST'])
+@require_http_methods(['GET'])
 def aprobar_comprobante(request, comprobante_id):
     """Aprueba un comprobante (valida partida doble)"""
     comprobante = get_object_or_404(Comprobante, id=comprobante_id)
@@ -229,20 +257,16 @@ def aprobar_comprobante(request, comprobante_id):
         messages.error(request, 'Solo se pueden aprobar comprobantes en estado BORRADOR.')
         return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
-    if request.method == 'POST':
-        try:
-            comprobante.aprobar(usuario=request.user)
-            messages.success(request, f'✅ Comprobante "{comprobante.numero}" aprobado exitosamente.')
-        except ValidationError as e:
-            messages.error(request, f'❌ Error al aprobar: {e}')
-        
-        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
+    try:
+        comprobante.aprobar(usuario=request.user)
+        messages.success(request, f'✅ Comprobante "{comprobante.numero}" aprobado exitosamente.')
+    except ValidationError as e:
+        messages.error(request, f'❌ Error al aprobar: {e}')
     
-    return render(request, 'transacciones/confirmar_aprobacion.html', {'comprobante': comprobante})
+    return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
 
 @login_required
-# NOSONAR - Django CSRF protection is enabled by default for POST requests
-@require_http_methods(['GET', 'POST'])
+@require_http_methods(['GET'])
 def anular_comprobante(request, comprobante_id):
     """Anula un comprobante aprobado"""
     comprobante = get_object_or_404(Comprobante, id=comprobante_id)
@@ -251,16 +275,13 @@ def anular_comprobante(request, comprobante_id):
         messages.error(request, 'El comprobante ya está anulado.')
         return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
     
-    if request.method == 'POST':
-        try:
-            comprobante.anular()
-            messages.success(request, f'Comprobante "{comprobante.numero}" anulado exitosamente.')
-        except ValidationError as e:
-            messages.error(request, f'Error al anular: {e}')
-        
-        return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
+    try:
+        comprobante.anular()
+        messages.success(request, f'Comprobante "{comprobante.numero}" anulado exitosamente.')
+    except ValidationError as e:
+        messages.error(request, f'Error al anular: {e}')
     
-    return render(request, 'transacciones/confirmar_anulacion.html', {'comprobante': comprobante})
+    return redirect(DETALLE_COMPROBANTE_URL, comprobante_id=comprobante.id)
 
 @login_required
 # NOSONAR - Django CSRF protection is enabled by default for POST requests

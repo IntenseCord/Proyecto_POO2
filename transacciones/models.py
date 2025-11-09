@@ -32,7 +32,7 @@ class Comprobante(models.Model):
     class Meta:
         verbose_name = "Comprobante"
         verbose_name_plural = "Comprobantes"
-        ordering = ['-fecha', '-numero']
+        ordering = ['-fecha', '-id']  # Ordenar por fecha descendente y luego por ID (más reciente primero)
         unique_together = ['empresa', 'tipo', 'numero']
     
     def __str__(self):

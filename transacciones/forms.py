@@ -92,12 +92,12 @@ class DetalleComprobanteForm(forms.ModelForm):
             self.fields['cuenta'].queryset = Cuenta.objects.filter(
                 empresa_id=empresa_id,
                 acepta_movimiento=True,
-                activo=True
+                esta_activa=True
             ).order_by('codigo')
         else:
             self.fields['cuenta'].queryset = Cuenta.objects.filter(
                 acepta_movimiento=True,
-                activo=True
+                esta_activa=True
             ).order_by('codigo')
     
     def clean(self):
@@ -118,10 +118,10 @@ DetalleComprobanteFormSet = inlineformset_factory(
     Comprobante,
     DetalleComprobante,
     form=DetalleComprobanteForm,
-    extra=5,  # Número de formularios vacíos adicionales
+    extra=1,  # Muestra solo 1 formulario vacío inicial
     can_delete=True,
-    min_num=2,  # Mínimo 2 líneas (débito y crédito)
-    validate_min=True,
+    min_num=0,  # No forzar mínimo en la visualización
+    validate_min=False,  # La validación de mínimo 2 se hace en la vista
 )
 
 class FiltroComprobanteForm(forms.Form):
