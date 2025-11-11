@@ -1,6 +1,21 @@
 from django import forms
 from .models import Producto, Categoria, MovimientoInventario
 
+class ImportarProductosForm(forms.Form):
+    archivo = forms.FileField(
+        label='Archivo Excel (.xlsx)',
+        help_text='Descarga la plantilla para ver las columnas esperadas.',
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        })
+    )
+    crear_categorias = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Crear categorías automáticamente si no existen'
+    )
+
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto

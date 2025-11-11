@@ -1,0 +1,111 @@
+{% extends 'inventario/base_inventario.html' %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="{% url 'dashboard:home' %}">Dashboard</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:dashboard' %}">Inventario</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'inventario:lista_productos' %}">Productos</a>
+  </li>
+  <li class="breadcrumb-item active">Importar Productos</li>
+
+</ol>
+{% endblock %}
+
+{% block page_title %}Importar Productos desde Excel{% endblock %}
+
+{% block inventario_content %}
+<div class="card shadow">
+  <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+    <h6 class="m-0 font-weight-bold text-primary">Selecciona un archivo .xlsx</h6>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-info">
+      <strong>Plantilla esperada (encabezados):</strong>
+      <code>codigo, nombre, descripcion, categoria, cantidad, precio_unitario, precio_venta, stock_minimo, estado</code><br>
+      - <em>codigo</em> es opcional (si existe se actualiza; si no, se crea).<br>
+      - <em>estado</em> admite: <code>activo</code>, <code>inactivo</code>, <code>descontinuado</code> (opcional).<br>
+      - <em>precio_venta</em> y <em>stock_minimo</em> son opcionales.
+    </div>
+
+    <p>
+      <a href="{% url 'inventario:plantilla_importacion_productos' %}" class="btn btn-outline-primary" target="_blank" rel="noopener">
+        <i class="fas fa-download"></i> Descargar plantilla Excel
+      </a>
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="row g-3">
+      {% csrf_token %}
+      <div class="col-md-6">
+        <label class="form-label">Archivo Excel (.xlsx)</label>
+        {{ form.archivo }}
+      </div>
+      <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check">
+          {{ form.crear_categorias }}
+          <label class="form-check-label" for="{{ form.crear_categorias.id_for_label }}">
+            {{ form.crear_categorias.label }}
+          </label>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-light">
+            <strong>Vista previa de la plantilla</strong>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>codigo</th>
+                    <th>nombre</th>
+                    <th>descripcion</th>
+                    <th>categoria</th>
+                    <th>cantidad</th>
+                    <th>precio_unitario</th>
+                    <th>precio_venta</th>
+                    <th>stock_minimo</th>
+                    <th>estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>PROD0001</td>
+                    <td>Camiseta básica</td>
+                    <td>Algodón 100%</td>
+                    <td>Ropa</td>
+                    <td>50</td>
+                    <td>20000</td>
+                    <td>30000</td>
+                    <td>5</td>
+                    <td>activo</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <small class="text-muted">
+              Sube un archivo .xlsx con estos encabezados en la primera fila. Si el código existe, el producto se actualizará; si no, se creará.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-file-import"></i> Importar
+        </button>
+        <a href="{% url 'inventario:lista_productos' %}" class="btn btn-secondary">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

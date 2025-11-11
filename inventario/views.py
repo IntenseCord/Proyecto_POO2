@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, F
 from django.db import models
@@ -9,7 +9,9 @@ from django.views.decorators.http import require_http_methods, require_GET, requ
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from .models import Producto, Categoria, MovimientoInventario
-from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm
+from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm, ImportarProductosForm
+from openpyxl import load_workbook
+from io import BytesIO
 
 # Constantes para evitar duplicación
 DETALLE_PRODUCTO_URL = 'inventario:detalle_producto'
@@ -284,3 +286,193 @@ def reporte_inventario(request):
     }
     
     return render(request, 'inventario/reporte_inventario.html', context)
+
+@login_required
+@never_cache
+@require_http_methods(['GET', 'POST'])
+def importar_productos(request):
+    """
+    Importa productos desde un archivo Excel (.xlsx).
+    Columnas esperadas (encabezados en la primera fila):
+      - codigo (opcional, si no se envía se genera)
+      - nombre
+      - descripcion
+      - categoria
+      - cantidad
+      - precio_unitario
+      - precio_venta (opcional)
+      - stock_minimo (opcional)
+      - estado (activo|inactivo|descontinuado) opcional
+    Conducta: si 'codigo' existe, actualiza; si no, crea uno nuevo.
+    """
+    if request.method == 'POST':
+        form = ImportarProductosForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = form.cleaned_data['archivo']
+            crear_categorias = form.cleaned_data.get('crear_categorias', True)
+
+            try:
+                contenido = archivo.read()
+                wb = load_workbook(filename=BytesIO(contenido), data_only=True)
+                ws = wb.active
+
+                headers = [str(c.value).strip().lower() if c.value is not None else '' for c in next(ws.iter_rows(min_row=1, max_row=1))]
+                indice = {h: i for i, h in enumerate(headers)}
+
+                requeridos = ['nombre', 'cantidad', 'precio_unitario']
+                faltantes = [h for h in requeridos if h not in indice]
+                if faltantes:
+                    messages.error(request, f'Faltan columnas requeridas: {", ".join(faltantes)}')
+                    return render(request, 'inventario/importar_productos.html', {'form': form})
+
+                creados = 0
+                actualizados = 0
+                errores = []
+
+                for row in ws.iter_rows(min_row=2):
+                    try:
+                        obtener = lambda campo: row[indice[campo]].value if campo in indice else None
+                        codigo = (obtener('codigo') or '').strip() if isinstance(obtener('codigo'), str) else obtener('codigo')
+                        nombre = obtener('nombre')
+                        descripcion = obtener('descripcion') or ''
+                        categoria_nombre = obtener('categoria')
+                        cantidad = obtener('cantidad') or 0
+                        precio_unitario = obtener('precio_unitario') or 0
+                        precio_venta = obtener('precio_venta') or precio_unitario
+                        stock_minimo = obtener('stock_minimo') or 5
+                        estado = (obtener('estado') or 'activo').strip().lower()
+                        if estado not in dict(Producto.ESTADO_CHOICES):
+                            estado = 'activo'
+
+                        # Normalizaciones
+                        try:
+                            cantidad = int(cantidad)
+                        except Exception:
+                            cantidad = 0
+                        try:
+                            from decimal import Decimal
+                            precio_unitario = Decimal(str(precio_unitario))
+                            precio_venta = Decimal(str(precio_venta))
+                        except Exception:
+                            from decimal import Decimal
+                            precio_unitario = Decimal('0.00')
+                            precio_venta = Decimal('0.00')
+                        try:
+                            stock_minimo = int(stock_minimo)
+                        except Exception:
+                            stock_minimo = 5
+
+                        categoria_obj = None
+                        if categoria_nombre:
+                            cat_nombre = str(categoria_nombre).strip()
+                            if cat_nombre:
+                                categoria_qs = Categoria.objects.filter(nombre__iexact=cat_nombre)
+                                if categoria_qs.exists():
+                                    categoria_obj = categoria_qs.first()
+                                elif crear_categorias:
+                                    categoria_obj = Categoria.objects.create(nombre=cat_nombre)
+
+                        if codigo:
+                            producto, creado = Producto.objects.get_or_create(
+                                codigo=str(codigo).strip(),
+                                defaults={
+                                    'nombre': nombre,
+                                    'descripcion': descripcion,
+                                    'categoria': categoria_obj,
+                                    'cantidad': cantidad,
+                                    'precio_unitario': precio_unitario,
+                                    'precio_venta': precio_venta,
+                                    'stock_minimo': stock_minimo,
+                                    'estado': estado,
+                                    'usuario_creador': request.user,
+                                }
+                            )
+                            if not creado:
+                                # actualizar
+                                producto.nombre = nombre or producto.nombre
+                                producto.descripcion = descripcion or producto.descripcion
+                                producto.categoria = categoria_obj or producto.categoria
+                                producto.cantidad = cantidad if cantidad is not None else producto.cantidad
+                                producto.precio_unitario = precio_unitario or producto.precio_unitario
+                                producto.precio_venta = precio_venta or producto.precio_venta
+                                producto.stock_minimo = stock_minimo if stock_minimo is not None else producto.stock_minimo
+                                producto.estado = estado or producto.estado
+                                producto.save()
+                                actualizados += 1
+                            else:
+                                creados += 1
+                        else:
+                            # crear sin código, el modelo lo genera
+                            producto = Producto.objects.create(
+                                nombre=nombre,
+                                descripcion=descripcion,
+                                categoria=categoria_obj,
+                                cantidad=cantidad,
+                                precio_unitario=precio_unitario,
+                                precio_venta=precio_venta,
+                                stock_minimo=stock_minimo,
+                                estado=estado,
+                                usuario_creador=request.user,
+                            )
+                            creados += 1
+
+                    except Exception as e:
+                        errores.append(str(e))
+                        continue
+
+                if creados or actualizados:
+                    messages.success(request, f'Importación completada. Creados: {creados}, Actualizados: {actualizados}.')
+                if errores:
+                    messages.warning(request, f'Se encontraron {len(errores)} filas con error.')
+
+                return redirect('inventario:lista_productos')
+
+            except Exception as e:
+                messages.error(request, f'No se pudo procesar el archivo: {e}')
+    else:
+        form = ImportarProductosForm()
+
+    return render(request, 'inventario/importar_productos.html', {'form': form})
+
+@login_required
+@never_cache
+@require_GET
+def plantilla_importacion_productos(request):
+    """Genera y descarga una plantilla Excel para importar productos."""
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Productos'
+
+    headers = [
+        'codigo', 'nombre', 'descripcion', 'categoria',
+        'cantidad', 'precio_unitario', 'precio_venta', 'stock_minimo', 'estado'
+    ]
+    ws.append(headers)
+
+    # Fila de ejemplo
+    ws.append([
+        'PROD0001', 'Camiseta básica', 'Algodón 100%', 'Ropa',
+        50, 20000, 30000, 5, 'activo'
+    ])
+
+    # Ajuste simple de ancho
+    for col in ws.columns:
+        max_length = 12
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except Exception:
+                pass
+        ws.column_dimensions[col[0].column_letter].width = max_length + 2
+
+    # Respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="plantilla_importacion_productos.xlsx"'
+    from openpyxl.writer.excel import save_workbook
+    save_workbook(wb, response)
+    return response
