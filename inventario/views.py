@@ -12,9 +12,136 @@ from .models import Producto, Categoria, MovimientoInventario
 from .forms import ProductoForm, CategoriaForm, MovimientoInventarioForm, ImportarProductosForm
 from openpyxl import load_workbook
 from io import BytesIO
+from decimal import Decimal
 
 # Constantes para evitar duplicación
 DETALLE_PRODUCTO_URL = 'inventario:detalle_producto'
+TEMPLATE_IMPORTAR_PRODUCTOS = 'inventario/importar_productos.html'
+
+def _normalizar_valores_fila(row, indice, estados_validos):
+    """
+    Extrae y normaliza datos de una fila de Excel según el índice de encabezados.
+    Devuelve un dict con los campos esperados por la importación.
+    """
+    obtener = lambda campo: row[indice[campo]].value if campo in indice else None
+
+    codigo = obtener('codigo')
+    if isinstance(codigo, str):
+        codigo = codigo.strip()
+
+    nombre = obtener('nombre')
+    descripcion = obtener('descripcion') or ''
+    categoria_nombre = obtener('categoria')
+
+    # Normalizar cantidad
+    try:
+        cantidad = int(obtener('cantidad') or 0)
+    except Exception:
+        cantidad = 0
+
+    # Normalizar precios
+    try:
+        precio_unitario = Decimal(str(obtener('precio_unitario') or '0'))
+    except Exception:
+        precio_unitario = Decimal('0.00')
+    try:
+        precio_venta_val = obtener('precio_venta')
+        precio_venta = Decimal(str(precio_venta_val if precio_venta_val is not None else precio_unitario))
+    except Exception:
+        precio_venta = Decimal('0.00')
+
+    # Normalizar stock mínimo
+    try:
+        stock_minimo = int(obtener('stock_minimo') or 5)
+    except Exception:
+        stock_minimo = 5
+
+    # Normalizar estado
+    estado_val = str(obtener('estado') or 'activo').strip().lower()
+    estado = estado_val if estado_val in estados_validos else 'activo'
+
+    return {
+        'codigo': codigo,
+        'nombre': nombre,
+        'descripcion': descripcion,
+        'categoria_nombre': categoria_nombre,
+        'cantidad': cantidad,
+        'precio_unitario': precio_unitario,
+        'precio_venta': precio_venta,
+        'stock_minimo': stock_minimo,
+        'estado': estado,
+    }
+
+def _resolver_categoria_por_nombre(nombre_categoria, crear_categorias):
+    if not nombre_categoria:
+        return None
+    nombre = str(nombre_categoria).strip()
+    if not nombre:
+        return None
+    existente = Categoria.objects.filter(nombre__iexact=nombre).first()
+    if existente:
+        return existente
+    return Categoria.objects.create(nombre=nombre) if crear_categorias else None
+
+def _manejar_producto(data, user, crear_categorias):
+    """
+    Crea o actualiza un producto a partir de data normalizada.
+    Retorna una tupla (creados, actualizados) con contadores 0/1.
+    """
+    categoria_obj = _resolver_categoria_por_nombre(data['categoria_nombre'], crear_categorias)
+
+    if data['codigo']:
+        producto, creado = Producto.objects.get_or_create(
+            codigo=str(data['codigo']).strip(),
+            defaults={
+                'nombre': data['nombre'],
+                'descripcion': data['descripcion'],
+                'categoria': categoria_obj,
+                'cantidad': data['cantidad'],
+                'precio_unitario': data['precio_unitario'],
+                'precio_venta': data['precio_venta'],
+                'stock_minimo': data['stock_minimo'],
+                'estado': data['estado'],
+                'usuario_creador': user,
+            }
+        )
+        if not creado:
+            producto.nombre = data['nombre'] or producto.nombre
+            producto.descripcion = data['descripcion'] or producto.descripcion
+            producto.categoria = categoria_obj or producto.categoria
+            producto.cantidad = data['cantidad'] if data['cantidad'] is not None else producto.cantidad
+            producto.precio_unitario = data['precio_unitario'] or producto.precio_unitario
+            producto.precio_venta = data['precio_venta'] or producto.precio_venta
+            producto.stock_minimo = data['stock_minimo'] if data['stock_minimo'] is not None else producto.stock_minimo
+            producto.estado = data['estado'] or producto.estado
+            producto.save()
+            return 0, 1
+        return 1, 0
+
+    Producto.objects.create(
+        nombre=data['nombre'],
+        descripcion=data['descripcion'],
+        categoria=categoria_obj,
+        cantidad=data['cantidad'],
+        precio_unitario=data['precio_unitario'],
+        precio_venta=data['precio_venta'],
+        stock_minimo=data['stock_minimo'],
+        estado=data['estado'],
+        usuario_creador=user,
+    )
+    return 1, 0
+
+def _procesar_hoja(ws, indice, crear_categorias, user, estados_validos):
+    creados, actualizados, errores = 0, 0, []
+    for row in ws.iter_rows(min_row=2):
+        try:
+            data = _normalizar_valores_fila(row, indice, estados_validos)
+            c, a = _manejar_producto(data, user, crear_categorias)
+            creados += c
+            actualizados += a
+        except Exception as e:
+            errores.append(str(e))
+    return creados, actualizados, errores
 
 @login_required
 @never_cache
@@ -290,65 +417,81 @@ def reporte_inventario(request):
 @login_required
 @never_cache
 @require_http_methods(['GET', 'POST'])
-def importar_productos(request): # Complejidad de esta función: < 15
+def importar_productos(request):
     """
-    Importa productos desde un archivo Excel (.xlsx).
-    Refactorizada para reducir la Complejidad Cognitiva mediante funciones auxiliares.
+    Importa productos desde un archivo Excel (.xlsx) usando helpers para baja complejidad.
     """
-    if request.method == 'POST': # +1
-        form = ImportarProductosForm(request.POST, request.FILES)
-        if form.is_valid(): # +2
-            archivo = form.cleaned_data['archivo']
-            crear_categorias = form.cleaned_data.get('crear_categorias', True)
+    if request.method != 'POST':
+        return render(request, TEMPLATE_IMPORTAR_PRODUCTOS, {'form': ImportarProductosForm()})
 
-            try: # +3 (El try/except externo cuenta como una rama)
-                contenido = archivo.read()
-                wb = load_workbook(filename=BytesIO(contenido), data_only=True)
-                ws = wb.active
+    form = ImportarProductosForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return render(request, TEMPLATE_IMPORTAR_PRODUCTOS, {'form': form})
 
-                # 1. Procesar encabezados y validar requeridos
-                headers = [str(c.value).strip().lower() if c.value is not None else '' for c in next(ws.iter_rows(min_row=1, max_row=1))]
-                indice = {h: i for i, h in enumerate(headers)}
-                requeridos = ['nombre', 'cantidad', 'precio_unitario']
-                faltantes = [h for h in requeridos if h not in indice]
-                
-                # Guard Clause: Validar columnas
-                if faltantes: # +4
-                    messages.error(request, f'Faltan columnas requeridas: {", ".join(faltantes)}')
-                    return render(request, 'inventario/importar_productos.html', {'form': form})
-                
-                # Inicializar contadores y opciones
-                creados, actualizados, errores = 0, 0, []
-                # Obtener los choices de estado solo una vez para la validación
-                producto_choices = dict(Producto.ESTADO_CHOICES).keys() 
-                
-                # 2. Iterar y procesar filas (Bucle principal, bajo anidamiento)
-                for row in ws.iter_rows(min_row=2): # +5 (El for cuenta)
-                    try: # +6 (El try/except interno cuenta)
-                        # Tarea 1: Obtener y normalizar datos de la fila (Complejidad delegada)
-                        data = _normalizar_valores_fila(row, indice, producto_choices)
-                        
-                        # Tarea 2: Crear o actualizar el producto (Complejidad delegada)
-                        c, a = _manejar_producto(data, request.user, crear_categorias)
-                        creados += c
-                        actualizados += a
+    try:
+        contenido = form.cleaned_data['archivo'].read()
+        ws = load_workbook(filename=BytesIO(contenido), data_only=True).active
 
-                    except Exception as e:
-                        # Manejo de errores a nivel de fila
-                        errores.append(str(e))
-                        continue
+        headers = [str(c.value).strip().lower() if c.value is not None else '' for c in next(ws.iter_rows(min_row=1, max_row=1))]
+        indice = {h: i for i, h in enumerate(headers) if h}
+        faltantes = [h for h in ['nombre', 'cantidad', 'precio_unitario'] if h not in indice]
+        if faltantes:
+            messages.error(request, f'Faltan columnas requeridas: {", ".join(faltantes)}')
+            return render(request, TEMPLATE_IMPORTAR_PRODUCTOS, {'form': form})
 
-                # 3. Mensajes de resultado y redirección
-                if creados or actualizados: # +7
-                    messages.success(request, f'Importación completada. Creados: {creados}, Actualizados: {actualizados}.')
-                if errores: # +8
-                    messages.warning(request, f'Se encontraron {len(errores)} filas con error.')
+        estados_validos = set(dict(Producto.ESTADO_CHOICES).keys())
+        creados, actualizados, errores = _procesar_hoja(
+            ws, indice, form.cleaned_data.get('crear_categorias', True), request.user, estados_validos
+        )
 
-                return redirect('inventario:lista_productos')
+        if creados or actualizados:
+            messages.success(request, f'Importación completada. Creados: {creados}, Actualizados: {actualizados}.')
+        if errores:
+            messages.warning(request, f'Se encontraron {len(errores)} filas con error.')
+        return redirect('inventario:lista_productos')
 
-            except Exception as e:
-                messages.error(request, f'No se pudo procesar el archivo: {e}')
-    else:
-        form = ImportarProductosForm()
+    except Exception as e:
+        messages.error(request, f'No se pudo procesar el archivo: {e}')
+        return render(request, TEMPLATE_IMPORTAR_PRODUCTOS, {'form': form})
 
-    return render(request, 'inventario/importar_productos.html', {'form': form})
+@login_required
+@never_cache
+@require_GET
+def plantilla_importacion_productos(request):
+    """Genera y descarga una plantilla Excel para importar productos."""
+    from openpyxl import Workbook
+    from openpyxl.writer.excel import save_workbook
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Productos'
+
+    headers = [
+        'codigo', 'nombre', 'descripcion', 'categoria',
+        'cantidad', 'precio_unitario', 'precio_venta', 'stock_minimo', 'estado'
+    ]
+    ws.append(headers)
+
+    # Fila de ejemplo
+    ws.append([
+        'PROD0001', 'Camiseta básica', 'Algodón 100%', 'Ropa',
+        50, 20000, 30000, 5, 'activo'
+    ])
+
+    # Ajuste simple de ancho
+    for col in ws.columns:
+        max_length = 12
+        for cell in col:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except Exception:
+                pass
+        ws.column_dimensions[col[0].column_letter].width = max_length + 2
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="plantilla_importacion_productos.xlsx"'
+    save_workbook(wb, response)
+    return response
